@@ -1,0 +1,54 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: production.Dockerfile
+    container_name: app
+    restart: "on-failure"
+    image: app
+    ports:
+      - 5050:5050
+    environment:
+      - TZ=America/Santiago
+  dev:
+    build:
+      context: .
+      dockerfile: development.Dockerfile
+    container_name: dev
+    restart: "on-failure"
+    image: dev
+    ports:
+      - 5051:5050
+    depends_on:
+      - db
+    environment:
+      - SERVER_DB=db
+      - DATABASE=tuwspDB
+      - USER_DB=sa
+      - PASSWORD_DB=Passw0rd
+      - TZ=America/Santiago
+    volumes:
+      - type: bind
+        source: .
+        target: /go/src
+  db:
+    build:
+      dockerfile: database.Dockerfile
+      context: ./db/Db
+    image: sql1
+    container_name: db
+    restart: "on-failure"
+    volumes:
+      - type: bind
+        source: ./server.log
+        target: /server.log
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Passw0rd
+      - SERVER_DB=db
+      - PORT_DB=1433
+      - TZ=America/Santiago
+    ports:
+      - 1433:1433
