@@ -11,7 +11,7 @@ import (
 // Deleting protocol
 func (mssql *SQLServer) DeleteProtocols(ctx context.Context, protocol *models.Protocol) error {
 	// preparing statement
-	query := `DELETE FROM protocols
+	query := `DELETE FROM url.protocols
 	WHERE EXISTS (SELECT 1 FROM protocols
 	WHERE id = @p1 AND protocol = @p2)`
 	stmt := MakeStatement(mssql, ctx, query)
@@ -37,7 +37,7 @@ func (mssql *SQLServer) DeleteProtocols(ctx context.Context, protocol *models.Pr
 // Dleting url
 func (mssql *SQLServer) DeleteURLs(ctx context.Context, url *models.Url) error {
 	// preparing statement
-	query := `DELETE FROM urls
+	query := `DELETE FROM url.urls
 	WHERE EXISTS (SELECT 1 FROM urls
 	WHERE id = @p1 AND domain = @p2 AND protocol_id = @p3)`
 	stmt := MakeStatement(mssql, ctx, query)
@@ -64,7 +64,7 @@ func (mssql *SQLServer) DeleteURLs(ctx context.Context, url *models.Url) error {
 // Deleting endpoint
 func (mssql *SQLServer) DeleteEndpoints(ctx context.Context, endpoint *models.Endpoint) error {
 	// preparing statement
-	query := `DELETE FROM endpoints
+	query := `DELETE FROM url.endpoints
 	WHERE EXISTS (SELECT 1 FROM endpoints
 	WHERE id = @p1 AND endpoint = @p2 AND url_id = @p3)`
 	stmt := MakeStatement(mssql, ctx, query)
@@ -91,7 +91,7 @@ func (mssql *SQLServer) DeleteEndpoints(ctx context.Context, endpoint *models.En
 // Deleting queryKey
 func (mssql *SQLServer) DeleteQueryKeys(ctx context.Context, querykey *models.QueryKey) error {
 	// preparing statement
-	query := `DELETE FROM query_keys
+	query := `DELETE FROM url.query_keys
 	WHERE EXISTS (SELECT 1 FROM query_keys
 	WHERE id = @p1 AND key_param = @p2 AND url_id = @p3)`
 	stmt := MakeStatement(mssql, ctx, query)
@@ -118,7 +118,7 @@ func (mssql *SQLServer) DeleteQueryKeys(ctx context.Context, querykey *models.Qu
 // Deleting queryValue
 func (mssql *SQLServer) DeleteQueryValues(ctx context.Context, queryvalue *models.QueryValue) error {
 	// preparing statement
-	query := `DELETE FROM query_values
+	query := `DELETE FROM url.query_values
 	WHERE EXISTS (SELECT 1 FROM query_values
 	WHERE id = @p1 AND value_param = @p2 AND user_id = @p3)`
 	stmt := MakeStatement(mssql, ctx, query)
@@ -145,7 +145,7 @@ func (mssql *SQLServer) DeleteQueryValues(ctx context.Context, queryvalue *model
 // Deleting user
 func (mssql *SQLServer) DeleteUsers(ctx context.Context, user *models.User) error {
 	// preparing statement
-	query := `DELETE FROM users
+	query := `DELETE FROM url.users
 	WHERE EXISTS (SELECT 1 FROM users
 	WHERE id = @p1 AND name = @p2 AND url_id = @p3)`
 	stmt := MakeStatement(mssql, ctx, query)
@@ -168,7 +168,7 @@ func (mssql *SQLServer) DeleteUsers(ctx context.Context, user *models.User) erro
 // Deleting infoUser
 func (mssql *SQLServer) DeleteInfoUsers(ctx context.Context, infouser *models.InfoUser) error {
 	// preparing statement
-	query := `DELETE FROM info_users
+	query := `DELETE FROM url.info_users
 	WHERE EXISTS (SELECT 1 FROM users
 	WHERE id = @p1 AND phone = @p2 AND user_id = @p3)`
 	stmt := MakeStatement(mssql, ctx, query)

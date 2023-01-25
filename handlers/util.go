@@ -1,31 +1,51 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
+
+	"tuwsp/repository"
 )
 
 // decode do a decode with package json from new decoder of interface
 func decode(r *http.Request, w http.ResponseWriter, a any) {
 	if err := json.
 		NewDecoder(r.Body).Decode(a); err != nil {
-		http.Error(w, "decode:"+err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	fmt.Printf("a: %v\n", a)
 }
 
 // encode do a encode with package json from new encoder of interface
 func encode(w http.ResponseWriter, a any) {
-	internalErr(w, json.NewEncoder(w).Encode(a))
-	fmt.Printf("a: %v\n", a)
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(a); err != nil {
+		internalErr(w, err)
+	}
+}
+
+// validateAgainsyDB do consusult to db about the user
+func validateAgainstDB(email string, password string, ctx context.Context) (bool, string) {
+	user, err := repository.GetAuthByEmail(ctx, email)
+	if err != nil || user == nil || user.Password != password {
+		return false, "credenciales invalidas"
+	}
+	return true, ""
 }
 
 // internalErr handle error with internalServerError of http
 func internalErr(w http.ResponseWriter, err error) {
 	if err != nil {
-		http.Error(w, "internal db:"+err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+// unauthorizedError hndle an unathorized error
+func unathorizedError(w http.ResponseWriter, err error) {
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 }

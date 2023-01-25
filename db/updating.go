@@ -11,7 +11,7 @@ import (
 // UpdateProtocols update the protocol given from protocols by its id
 func (mssql *SQLServer) UpdateProtocols(ctx context.Context, protocol *models.Protocol) error {
 	// preparing statement
-	query := `UPDATE protocols
+	query := `UPDATE url.protocols
 	SET protocol = @p1
 	WHERE id = @p2`
 	stmt := MakeStatement(mssql, ctx, query)
@@ -36,7 +36,7 @@ func (mssql *SQLServer) UpdateProtocols(ctx context.Context, protocol *models.Pr
 // UpdateURLs update the domain and protocol_id given from urls by its id
 func (mssql *SQLServer) UpdateURLs(ctx context.Context, url *models.Url) error {
 	// preparing statement
-	query := `UPDATE urls
+	query := `UPDATE url.urls
 	SET domain = @p1, protocol_id = @p2
 	WHERE id = @p3`
 	stmt := MakeStatement(mssql, ctx, query)
@@ -62,7 +62,7 @@ func (mssql *SQLServer) UpdateURLs(ctx context.Context, url *models.Url) error {
 // UpdateEndpoints update the endpoint and url_id from endpoints by its id
 func (mssql *SQLServer) UpdateEndpoints(ctx context.Context, endpoint *models.Endpoint) error {
 	// preparing statement
-	query := `UPDATE endpoints
+	query := `UPDATE url.endpoints
 	SET endpoint = @p1, url_id = @p2
 	WHERE id = @p3`
 	stmt := MakeStatement(mssql, ctx, query)
@@ -88,7 +88,7 @@ func (mssql *SQLServer) UpdateEndpoints(ctx context.Context, endpoint *models.En
 // UpdateQueryKeys update the keyParam, urlId from query_keys by its id
 func (mssql *SQLServer) UpdateQueryKeys(ctx context.Context, querykey *models.QueryKey) error {
 	// preparing statement
-	query := `UPDATE query_keys
+	query := `UPDATE url.query_keys
 	SET key_param = @p1, url_id = @p2
 	WHERE id = @p3`
 	stmt := MakeStatement(mssql, ctx, query)
@@ -115,7 +115,7 @@ func (mssql *SQLServer) UpdateQueryKeys(ctx context.Context, querykey *models.Qu
 // UpdateQueryValues update the valueParam, urlId from query_values by its id
 func (mssql *SQLServer) UpdateQueryValues(ctx context.Context, queryvalue *models.QueryValue) error {
 	// preparing statement
-	query := `UPDATE query_values
+	query := `UPDATE url.query_values
 	SET value_param = @p1, user_id = @p2
 	WHERE id = @p3`
 	stmt := MakeStatement(mssql, ctx, query)
@@ -142,7 +142,7 @@ func (mssql *SQLServer) UpdateQueryValues(ctx context.Context, queryvalue *model
 // UpdateUsers update the name, urlId given from users by its id
 func (mssql *SQLServer) UpdateUsers(ctx context.Context, user *models.User) error {
 	// preparing statement
-	query := `UPDATE users
+	query := `UPDATE url.users
 	SET name = @p1, url_id = @p2
 	WHERE id = @p3`
 	stmt := MakeStatement(mssql, ctx, query)
@@ -169,7 +169,7 @@ func (mssql *SQLServer) UpdateUsers(ctx context.Context, user *models.User) erro
 // UpdateInfoUsers update phone, birthday given from info_users by its id
 func (mssql *SQLServer) UpdateInfoUsers(ctx context.Context, infouser *models.InfoUser) error {
 	// preparing statement
-	query := `UPDATE info_users
+	query := `UPDATE url.info_users
 	SET phone = @p1, birthday = @p2
 	WHERE id = @p3`
 	stmt := MakeStatement(mssql, ctx, query)

@@ -8,9 +8,14 @@ import (
 
 type Repository interface {
 	// Gets
+	GetFormByTitle(ctx context.Context, title string) (*models.Form, error)
+	GetLoginByAuthId(ctx context.Context, auth_id string) (*models.Login, error)
 	GetAuthById(ctx context.Context, id string) (*models.Auth, error)
+	GetAuthByEmail(ctx context.Context, email string) (*models.Auth, error)
 	GetUserByNickName(ctx context.Context, nick_name string) (*models.User, error)
+	GetUserById(ctx context.Context, id string) (*models.User, error)
 	GetInfoUserByUserId(ctx context.Context, user_id string) (*models.InfoUser, error)
+	GetInfoUserByPhone(ctx context.Context, phone int) (*models.InfoUser, error)
 	GetProtocolById(ctx context.Context, id string) (*models.Protocol, error)
 	GetUrlById(ctx context.Context, id string) (*models.Url, error)
 	GetQueryKeyByUrlId(ctx context.Context, url_id string) ([]*models.QueryKey, error)
@@ -52,9 +57,24 @@ func SetRepository(repository Repository) {
 	implementation = repository
 }
 
+// GetFormByTitle do which the implementation
+func GetFormByTitle(ctx context.Context, title string) (*models.Form, error) {
+	return implementation.GetFormByTitle(ctx, title)
+}
+
+// GetLoginByAuthId do wich the implementation
+func GetLoginByAuthId(ctx context.Context, auth_id string) (*models.Login, error) {
+	return implementation.GetLoginByAuthId(ctx, auth_id)
+}
+
 // GetAuthById do wich the implementation
 func GetAuthById(ctx context.Context, id string) (*models.Auth, error) {
 	return implementation.GetAuthById(ctx, id)
+}
+
+// GetAuthByEmail do wich the implementation
+func GetAuthByEmail(ctx context.Context, email string) (*models.Auth, error) {
+	return implementation.GetAuthByEmail(ctx, email)
 }
 
 // GetUserByNickName do wich the implementation
@@ -62,9 +82,19 @@ func GetUserByNickName(ctx context.Context, nick_name string) (*models.User, err
 	return implementation.GetUserByNickName(ctx, nick_name)
 }
 
+// GetUserById do wich the implementation
+func GetUserById(ctx context.Context, id string) (*models.User, error) {
+	return implementation.GetUserById(ctx, id)
+}
+
 // GetInfoUserByUserId do which the implementation
 func GetInfoUserByUserId(ctx context.Context, user_id string) (*models.InfoUser, error) {
 	return implementation.GetInfoUserByUserId(ctx, user_id)
+}
+
+// GetInfoUserByPhone do which the implementation
+func GetInfoUserByPhone(ctx context.Context, phone int) (*models.InfoUser, error) {
+	return implementation.GetInfoUserByPhone(ctx, phone)
 }
 
 // GetProtocolById do which the implementation

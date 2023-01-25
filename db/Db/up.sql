@@ -18,6 +18,20 @@ BEGIN
 END
 GO
 IF NOT EXISTS (SELECT * FROM sys.tables
+ WHERE name = 'forms' AND schema_id = (SELECT schema_id FROM sys.schemas
+ WHERE name = N'info'))
+BEGIN
+    CREATE TABLE info.forms
+    (
+        id NVARCHAR(32),
+        title NVARCHAR(50) NOT NULL,
+        app NVARCHAR(20),
+        key_value NTEXT,
+        CONSTRAINT tuwsp_PK_forms PRIMARY KEY (id)
+    )
+END
+GO
+IF NOT EXISTS (SELECT * FROM sys.tables
  WHERE name = 'protocols' AND schema_id = (SELECT schema_id FROM sys.schemas
  WHERE name = N'url'))
 BEGIN
@@ -79,7 +93,7 @@ BEGIN
     CREATE TABLE url.info_users 
     (
         id NVARCHAR(32),
-        phone INT NOT NULL,
+        phone INT NOT NULL UNIQUE,
         country NVARCHAR(20) NOT NULL,
         cod_country CHAR(2) NOT NULL,
         birthday DATE,
@@ -140,7 +154,12 @@ IF NOT EXISTS (SELECT * FROM sys.tables
 BEGIN
     CREATE TABLE info.dashboards
     (
-        id NVARCHAR(32)
+        id NVARCHAR(32),
+        title NVARCHAR(50) NOT NULL,
+        menu NTEXT,
+        app NVARCHAR(20),
+        owner NVARCHAR(32) NOT NULL,
+        FOREIGN KEY (owner) REFERENCES info.auths(id),
         CONSTRAINT tuwsp_PK_dashboards PRIMARY KEY (id)
     )
 END
@@ -151,7 +170,15 @@ IF NOT EXISTS (SELECT * FROM sys.tables
 BEGIN
     CREATE TABLE info.logins
     (
-        id NVARCHAR(32)
+        id NVARCHAR(32),
+        email NVARCHAR(250) NOT NULL UNIQUE,
+        password NVARCHAR(32) NOT NULL,
+        created_at DATETIME2,
+        log_out DATETIME2,
+        auth_id NVARCHAR(32) NOT NULL,
+        form_id NVARCHAR(32) NOT NULL,
+        FOREIGN KEY (auth_id) REFERENCES info.auths(id),
+        FOREIGN KEY (form_id) REFERENCES info.forms(id),
         CONSTRAINT tuwsp_PK_logins PRIMARY KEY (id)
     )
 END
@@ -162,19 +189,16 @@ IF NOT EXISTS (SELECT * FROM sys.tables
 BEGIN
     CREATE TABLE info.signups
     (
-        id NVARCHAR(32)
+        id NVARCHAR(32),
+        name NVARCHAR(70),
+        nick_name NVARCHAR(50),
+        email NVARCHAR(255) NOT NULL UNIQUE,
+        phone INT,
+        password NVARCHAR(250) NOT NULL,
+        confirm_password NVARCHAR(250) NOT NULL,
+        form_id NVARCHAR(32) NOT NULL,
+        FOREIGN KEY (form_id) REFERENCES info.forms(id),
         CONSTRAINT tuwsp_PK_signups PRIMARY KEY (id)
-    )
-END
-GO
-IF NOT EXISTS (SELECT * FROM sys.tables
- WHERE name = 'forms' AND schema_id = (SELECT schema_id FROM sys.schemas
- WHERE name = N'info'))
-BEGIN
-    CREATE TABLE info.forms
-    (
-        id NVARCHAR(32)
-        CONSTRAINT tuwsp_PK_forms PRIMARY KEY (id)
     )
 END
 GO

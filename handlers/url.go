@@ -1,14 +1,11 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"tuwsp/models"
 	"tuwsp/repository"
 	"tuwsp/server"
-
-	"github.com/gorilla/mux"
 )
 
 /*----- Inserts -----*/
@@ -73,26 +70,21 @@ func InsertQueryValueHandler(s server.Server) http.HandlerFunc {
 // GetProtocolHandler handle the select of protocols
 func GetProtocolHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		params := mux.Vars(r)
+		params := r.URL.Query()
 		protocol, err := repository.
-			GetProtocolById(r.Context(), params["q"])
-		if err != nil {
-			return
-		}
+			GetProtocolById(r.Context(), params.Get("q"))
+		internalErr(w, err)
 		encode(w, &protocol)
-		json.NewEncoder(w).Encode(&protocol)
 	}
 }
 
 // GetUrlHandler handle the select of urls
 func GetUrlHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		params := mux.Vars(r)
+		params := r.URL.Query()
 		url, err := repository.
-			GetUrlById(r.Context(), params["q"])
-		if err != nil {
-			return
-		}
+			GetUrlById(r.Context(), params.Get("q"))
+		internalErr(w, err)
 		encode(w, &url)
 	}
 }
@@ -100,12 +92,10 @@ func GetUrlHandler(s server.Server) http.HandlerFunc {
 // GetEndpointHandler handle the select of endpoints
 func GetEndpointHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		params := mux.Vars(r)
+		params := r.URL.Query()
 		endpoint, err := repository.
-			GetEndPointByUrlId(r.Context(), params["q"])
-		if err != nil {
-			return
-		}
+			GetEndPointByUrlId(r.Context(), params.Get("q"))
+		internalErr(w, err)
 		encode(w, &endpoint)
 	}
 }
@@ -113,12 +103,10 @@ func GetEndpointHandler(s server.Server) http.HandlerFunc {
 // GetQueryKeyHandler handle the select of query_keys
 func GetQueryKeyHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		params := mux.Vars(r)
+		params := r.URL.Query()
 		querykey, err := repository.
-			GetQueryKeyByUrlId(r.Context(), params["q"])
-		if err != nil {
-			return
-		}
+			GetQueryKeyByUrlId(r.Context(), params.Get("q"))
+		internalErr(w, err)
 		encode(w, &querykey)
 	}
 }
@@ -126,12 +114,10 @@ func GetQueryKeyHandler(s server.Server) http.HandlerFunc {
 // GetQueryValueHandler handle the select of query_values
 func GetQueryValueHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		params := mux.Vars(r)
+		params := r.URL.Query()
 		queryvalue, err := repository.
-			GetQueryValueByUserId(r.Context(), params["q"])
-		if err != nil {
-			return
-		}
+			GetQueryValueByUserId(r.Context(), params.Get("q"))
+		internalErr(w, err)
 		encode(w, &queryvalue)
 	}
 }
