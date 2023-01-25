@@ -120,7 +120,7 @@ func (mssql *SQLServer) DeleteQueryValues(ctx context.Context, queryvalue *model
 	// preparing statement
 	query := `DELETE FROM query_values
 	WHERE EXISTS (SELECT 1 FROM query_values
-	WHERE id = @p1 AND value_param = @p2 AND url_id = @p3)`
+	WHERE id = @p1 AND value_param = @p2 AND user_id = @p3)`
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
 	// insert
@@ -128,7 +128,7 @@ func (mssql *SQLServer) DeleteQueryValues(ctx context.Context, queryvalue *model
 		Exec(
 			queryvalue.Id,
 			queryvalue.ValueParam,
-			queryvalue.UrlId)
+			queryvalue.UserId)
 	if err != nil {
 		return err
 	}

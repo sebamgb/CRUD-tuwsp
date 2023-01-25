@@ -116,7 +116,7 @@ func (mssql *SQLServer) UpdateQueryKeys(ctx context.Context, querykey *models.Qu
 func (mssql *SQLServer) UpdateQueryValues(ctx context.Context, queryvalue *models.QueryValue) error {
 	// preparing statement
 	query := `UPDATE query_values
-	SET value_param = @p1, url_id = @p2
+	SET value_param = @p1, user_id = @p2
 	WHERE id = @p3`
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
@@ -124,7 +124,7 @@ func (mssql *SQLServer) UpdateQueryValues(ctx context.Context, queryvalue *model
 	result, err := stmt.
 		Exec(
 			queryvalue.ValueParam,
-			queryvalue.UrlId,
+			queryvalue.UserId,
 			queryvalue.Id)
 	if err != nil {
 		return err

@@ -7,9 +7,21 @@ END
 GO
 USE tuwsp;
 GO
-IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = 'protocols') 
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = N'url') 
 BEGIN
-    CREATE TABLE protocols 
+    EXEC ('CREATE SCHEMA url')
+END
+GO
+IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = N'info') 
+BEGIN
+    EXEC ('CREATE SCHEMA info')
+END
+GO
+IF NOT EXISTS (SELECT * FROM sys.tables
+ WHERE name = 'protocols' AND schema_id = (SELECT schema_id FROM sys.schemas
+ WHERE name = N'url'))
+BEGIN
+    CREATE TABLE url.protocols
     (
         id NVARCHAR(32),
         protocol NVARCHAR(15) NOT NULL,
@@ -17,9 +29,11 @@ BEGIN
     )
 END
 GO
-IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = 'auths') 
+IF NOT EXISTS (SELECT * FROM sys.tables
+ WHERE name = 'auths' AND schema_id = (SELECT schema_id FROM sys.schemas
+ WHERE name = N'info'))
 BEGIN
-    CREATE TABLE auths 
+    CREATE TABLE info.auths 
     (
         id NVARCHAR(32),
         email NVARCHAR(255) NOT NULL UNIQUE,
@@ -29,34 +43,40 @@ BEGIN
     )
 END
 GO
-IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = 'urls') 
+IF NOT EXISTS (SELECT * FROM sys.tables
+ WHERE name = 'urls' AND schema_id = (SELECT schema_id FROM sys.schemas
+ WHERE name = N'url'))
 BEGIN
-    CREATE TABLE urls 
+    CREATE TABLE url.urls 
     (
         id NVARCHAR(32),
         domain NVARCHAR(255) NOT NULL,
         protocol_id NVARCHAR(32) NOT NULL,
-        FOREIGN KEY(protocol_id) REFERENCES protocols(id),
+        FOREIGN KEY(protocol_id) REFERENCES url.protocols(id),
         CONSTRAINT tuwsp_PK_urls PRIMARY KEY (id)
     )
 END
 GO
-IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = 'users') 
+IF NOT EXISTS (SELECT * FROM sys.tables
+ WHERE name = 'users' AND schema_id = (SELECT schema_id FROM sys.schemas
+ WHERE name = N'url'))
 BEGIN
-    CREATE TABLE users 
+    CREATE TABLE url.users 
     (
         id NVARCHAR(32),
         name NVARCHAR(70) NULL,
         nick_name NVARCHAR(50) NOT NULL UNIQUE,
         url_id NVARCHAR(32) NULL,
-        FOREIGN KEY(url_id) REFERENCES urls(id),
+        FOREIGN KEY(url_id) REFERENCES url.urls(id),
         CONSTRAINT tuwsp_PK_users PRIMARY KEY (id)
     )
 END
 GO
-IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = 'info_users') 
+IF NOT EXISTS (SELECT * FROM sys.tables
+ WHERE name = 'info_users' AND schema_id = (SELECT schema_id FROM sys.schemas
+ WHERE name = N'url'))
 BEGIN
-    CREATE TABLE info_users 
+    CREATE TABLE url.info_users 
     (
         id NVARCHAR(32),
         phone INT NOT NULL,
@@ -64,47 +84,97 @@ BEGIN
         cod_country CHAR(2) NOT NULL,
         birthday DATE,
         user_id NVARCHAR(32),
-        FOREIGN KEY(user_id) REFERENCES users(id),
+        FOREIGN KEY(user_id) REFERENCES url.users(id),
         CONSTRAINT tuwsp_PK_info_users PRIMARY KEY (id)
     )
 END
 GO
-IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = 'query_values') 
+IF NOT EXISTS (SELECT * FROM sys.tables
+ WHERE name = 'query_values' AND schema_id = (SELECT schema_id FROM sys.schemas
+ WHERE name = N'url'))
 BEGIN
-    CREATE TABLE query_values 
+    CREATE TABLE url.query_values 
     (
-        number INT IDENTITY(1,1),
+        number INT NOT NULL,
         id TINYINT NOT NULL,
         value_param NTEXT NOT NULL,
-        url_id NVARCHAR(32) NOT NULL,
-        FOREIGN KEY(url_id) REFERENCES urls(id),
+        user_id NVARCHAR(32) NOT NULL,
+        FOREIGN KEY(user_id) REFERENCES url.users(id),
         CONSTRAINT tuwsp_PK_query_values PRIMARY KEY (number)
     )
 END
 GO
-IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = 'query_keys') 
+IF NOT EXISTS (SELECT * FROM sys.tables
+ WHERE name = 'query_keys' AND schema_id = (SELECT schema_id FROM sys.schemas
+ WHERE name = N'url'))
 BEGIN
-    CREATE TABLE query_keys 
+    CREATE TABLE url.query_keys 
     (
-        number INT IDENTITY(1,1),
+        number INT NOT NULL,
         id TINYINT NOT NULL,
         key_param NVARCHAR(255) NOT NULL,
         url_id NVARCHAR(32) NOT NULL,
-        FOREIGN KEY(url_id) REFERENCES urls(id),
+        FOREIGN KEY(url_id) REFERENCES url.urls(id),
         CONSTRAINT tuwsp_PK_query_keys PRIMARY KEY (number)
     )
 END
 GO
-IF NOT EXISTS (SELECT * FROM information_schema.tables WHERE table_name = 'endponts') 
+IF NOT EXISTS (SELECT * FROM sys.tables
+ WHERE name = 'endpoints' AND schema_id = (SELECT schema_id FROM sys.schemas
+ WHERE name = N'url'))
 BEGIN
-    CREATE TABLE endponts 
+    CREATE TABLE url.endpoints 
     (
-        number INT IDENTITY(1,1),
+        number INT NOT NULL,
         id TINYINT NOT NULL,
         endpoint NVARCHAR(255) NOT NULL,
         url_id NVARCHAR(32) NOT NULL,
-        FOREIGN KEY(url_id) REFERENCES urls(id),
+        FOREIGN KEY(url_id) REFERENCES url.urls(id),
         CONSTRAINT tuwsp_PK_endponts PRIMARY KEY (number)
+    )
+END
+GO
+IF NOT EXISTS (SELECT * FROM sys.tables
+ WHERE name = 'dashboards' AND schema_id = (SELECT schema_id FROM sys.schemas
+ WHERE name = N'info'))
+BEGIN
+    CREATE TABLE info.dashboards
+    (
+        id NVARCHAR(32)
+        CONSTRAINT tuwsp_PK_dashboards PRIMARY KEY (id)
+    )
+END
+GO
+IF NOT EXISTS (SELECT * FROM sys.tables
+ WHERE name = 'logins' AND schema_id = (SELECT schema_id FROM sys.schemas
+ WHERE name = N'info'))
+BEGIN
+    CREATE TABLE info.logins
+    (
+        id NVARCHAR(32)
+        CONSTRAINT tuwsp_PK_logins PRIMARY KEY (id)
+    )
+END
+GO
+IF NOT EXISTS (SELECT * FROM sys.tables
+ WHERE name = 'signups' AND schema_id = (SELECT schema_id FROM sys.schemas
+ WHERE name = N'info'))
+BEGIN
+    CREATE TABLE info.signups
+    (
+        id NVARCHAR(32)
+        CONSTRAINT tuwsp_PK_signups PRIMARY KEY (id)
+    )
+END
+GO
+IF NOT EXISTS (SELECT * FROM sys.tables
+ WHERE name = 'forms' AND schema_id = (SELECT schema_id FROM sys.schemas
+ WHERE name = N'info'))
+BEGIN
+    CREATE TABLE info.forms
+    (
+        id NVARCHAR(32)
+        CONSTRAINT tuwsp_PK_forms PRIMARY KEY (id)
     )
 END
 GO

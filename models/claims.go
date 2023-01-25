@@ -11,8 +11,8 @@ type AppClaims struct {
 }
 
 type Auth struct {
-	Id       string         `url:"id"`
-	Email    string         `url:"email"`
-	CratedAt civil.DateTime `url:"created_at"`
-	Password string         `url:"password"`
+	Id       string         `json:"id"`
+	Email    string         `json:"email"`
+	CratedAt civil.DateTime `json:"created_at"`
+	Password string         `json:"password"`
 }

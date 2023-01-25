@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 
@@ -15,7 +16,7 @@ var DRIVER_DB, SERVER_DB, USER_DB, PASSWORD_DB, PORT_DB, DATABASE string
 
 func init() {
 	if err := godotenv.Load(".env"); err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Errorf(".env: %v", err))
 		return
 	}
 	DRIVER_DB = os.Getenv("DRIVER_DB")
@@ -29,12 +30,12 @@ func init() {
 func main() {
 	if config, err := server.
 		NewConfig(DRIVER_DB, SERVER_DB, USER_DB, PASSWORD_DB, PORT_DB, DATABASE); err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Errorf("new config: %v", err))
 	} else if s, err := server.NewServer(context.Background(), config); err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Errorf("new server: %v", err))
 	} else if err := s.
 		Up(routes.BindRoute); err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Errorf("up: %v", err))
 		return
 	}
 }

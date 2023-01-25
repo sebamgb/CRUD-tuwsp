@@ -2,13 +2,16 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"tuwsp/models"
 	"tuwsp/repository"
 	"tuwsp/server"
+
+	"github.com/gorilla/mux"
 )
+
+/*----- Inserts -----*/
 
 // InsertProtocolHandler handle the insert of protocols
 func InsertProtocolHandler(s server.Server) http.HandlerFunc {
@@ -17,6 +20,7 @@ func InsertProtocolHandler(s server.Server) http.HandlerFunc {
 		decode(r, w, &protocolRequest)
 		internalErr(w, repository.
 			InsertIntoProtocols(r.Context(), &protocolRequest))
+		encode(w, &protocolRequest)
 	}
 }
 
@@ -27,6 +31,7 @@ func InsertUrlHandler(s server.Server) http.HandlerFunc {
 		decode(r, w, &urlRequest)
 		internalErr(w, repository.
 			InsertIntoURLs(r.Context(), &urlRequest))
+		encode(w, &urlRequest)
 	}
 }
 
@@ -37,6 +42,7 @@ func InsertEndpointHandler(s server.Server) http.HandlerFunc {
 		decode(r, w, &endpointRequest)
 		internalErr(w, repository.
 			InsertIntoEndpoints(r.Context(), &endpointRequest))
+		encode(w, &endpointRequest)
 	}
 }
 
@@ -47,6 +53,7 @@ func InsertQueryKeyHandler(s server.Server) http.HandlerFunc {
 		decode(r, w, &querykeyRequest)
 		internalErr(w, repository.
 			InsertIntoQueryKeys(r.Context(), &querykeyRequest))
+		encode(w, &querykeyRequest)
 	}
 }
 
@@ -57,75 +64,74 @@ func InsertQueryValueHandler(s server.Server) http.HandlerFunc {
 		decode(r, w, &queryvalueRequest)
 		internalErr(w, repository.
 			InsertIntoQueryValues(r.Context(), &queryvalueRequest))
+		encode(w, &queryvalueRequest)
 	}
 }
+
+/*----- Gets -----*/
 
 // GetProtocolHandler handle the select of protocols
 func GetProtocolHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.URL.Query().Get("id")
+		params := mux.Vars(r)
 		protocol, err := repository.
-			GetProtocolById(r.Context(), id)
+			GetProtocolById(r.Context(), params["q"])
 		if err != nil {
-			fmt.Printf("err: %v\n", err)
 			return
 		}
-		json.NewEncoder(w).Encode(protocol)
+		encode(w, &protocol)
+		json.NewEncoder(w).Encode(&protocol)
 	}
 }
 
 // GetUrlHandler handle the select of urls
 func GetUrlHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.URL.Query().Get("id")
+		params := mux.Vars(r)
 		url, err := repository.
-			GetUrlById(r.Context(), id)
+			GetUrlById(r.Context(), params["q"])
 		if err != nil {
-			fmt.Printf("err: %v\n", err)
 			return
 		}
-		json.NewEncoder(w).Encode(url)
+		encode(w, &url)
 	}
 }
 
 // GetEndpointHandler handle the select of endpoints
 func GetEndpointHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.URL.Query().Get("id")
+		params := mux.Vars(r)
 		endpoint, err := repository.
-			GetEndPointByUrlId(r.Context(), id)
+			GetEndPointByUrlId(r.Context(), params["q"])
 		if err != nil {
-			fmt.Printf("err: %v\n", err)
 			return
 		}
-		json.NewEncoder(w).Encode(endpoint)
+		encode(w, &endpoint)
 	}
 }
 
 // GetQueryKeyHandler handle the select of query_keys
 func GetQueryKeyHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.URL.Query().Get("id")
+		params := mux.Vars(r)
 		querykey, err := repository.
-			GetQueryKeyByUrlId(r.Context(), id)
+			GetQueryKeyByUrlId(r.Context(), params["q"])
 		if err != nil {
-			fmt.Printf("err: %v\n", err)
 			return
 		}
-		json.NewEncoder(w).Encode(querykey)
+		encode(w, &querykey)
 	}
 }
 
 // GetQueryValueHandler handle the select of query_values
 func GetQueryValueHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id := r.URL.Query().Get("id")
+		params := mux.Vars(r)
 		queryvalue, err := repository.
-			GetQueryValueByUrlId(r.Context(), id)
+			GetQueryValueByUserId(r.Context(), params["q"])
 		if err != nil {
-			fmt.Printf("err: %v\n", err)
 			return
 		}
-		json.NewEncoder(w).Encode(queryvalue)
+		encode(w, &queryvalue)
 	}
 }

@@ -14,38 +14,65 @@ import (
 func BindRoute(s server.Server, r *mux.Router) {
 	r.Path("/login").Handler(handlers.Login(s))
 	r.Path("/signup").Handler(handlers.Signup(s))
-	// public := r.NewRoute().Subrouter()
+	public := r.NewRoute().Subrouter()
 	private := r.NewRoute().Subrouter()
-	// Insert paths
-	// user:
 	private.
 		Use(middlewares.AuthMiddleware(s))
-	private.
+	// Insert paths
+	// user:
+	public.
 		Handle("/auths", handlers.InsertAuthHandler(s)).
 		Methods(http.MethodPost)
-	private.
+	public.
 		Handle("/users", handlers.InsertUserHandler(s)).
 		Methods(http.MethodPost)
-	private.
+	public.
 		Handle("/info-users", handlers.InsertInfoUserHandler(s)).
 		Methods(http.MethodPost)
 	// url:
-	private.
+	public.
 		Handle("/protocols", handlers.InsertProtocolHandler(s)).
 		Methods(http.MethodPost)
-	private.
+	public.
 		Handle("/urls", handlers.InsertUrlHandler(s)).
 		Methods(http.MethodPost)
-	private.
+	public.
 		Handle("/endpoints", handlers.InsertEndpointHandler(s)).
 		Methods(http.MethodPost)
-	private.
+	public.
 		Handle("/query-keys", handlers.InsertQueryKeyHandler(s)).
 		Methods(http.MethodPost)
-	private.
+	public.
 		Handle("/query-values", handlers.InsertQueryValueHandler(s)).
 		Methods(http.MethodPost)
 	// Get paths
+	// user:
+	public.
+		Handle("/auths", handlers.GetAuthHandler(s)).
+		Methods(http.MethodGet)
+	public.
+		Handle("/users", handlers.GetUserHandler(s)).
+		Methods(http.MethodGet)
+	public.
+		Handle("/info-users", handlers.GetInfoUserHandler(s)).
+		Methods(http.MethodGet)
+	// url:
+	public.
+		Handle("/protocols", handlers.GetProtocolHandler(s)).
+		Methods(http.MethodGet)
+	public.
+		Handle("/urls", handlers.GetUrlHandler(s)).
+		Methods(http.MethodGet)
+	public.
+		Handle("/endpoints", handlers.GetEndpointHandler(s)).
+		Methods(http.MethodGet)
+	public.
+		Handle("/query-keys", handlers.GetQueryKeyHandler(s)).
+		Methods(http.MethodGet)
+	public.
+		Handle("/query-values", handlers.GetQueryValueHandler(s))
+
+	// Update paths
 	// user:
 	// url:
 }

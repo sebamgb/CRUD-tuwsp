@@ -9,12 +9,12 @@ import (
 type Repository interface {
 	// Gets
 	GetAuthById(ctx context.Context, id string) (*models.Auth, error)
-	GetUserById(ctx context.Context, id string) (*models.User, error)
-	GetInfoUserByIdAndUserId(ctx context.Context, id string, user_id string) (*models.InfoUser, error)
+	GetUserByNickName(ctx context.Context, nick_name string) (*models.User, error)
+	GetInfoUserByUserId(ctx context.Context, user_id string) (*models.InfoUser, error)
 	GetProtocolById(ctx context.Context, id string) (*models.Protocol, error)
 	GetUrlById(ctx context.Context, id string) (*models.Url, error)
 	GetQueryKeyByUrlId(ctx context.Context, url_id string) ([]*models.QueryKey, error)
-	GetQueryValueByUrlId(ctx context.Context, url_id string) ([]*models.QueryValue, error)
+	GetQueryValueByUserId(ctx context.Context, user_id string) ([]*models.QueryValue, error)
 	GetEndPointByUrlId(ctx context.Context, url_id string) ([]*models.Endpoint, error)
 	// Inserts
 	InsertIntoAuths(ctx context.Context, auth *models.Auth) error
@@ -57,14 +57,14 @@ func GetAuthById(ctx context.Context, id string) (*models.Auth, error) {
 	return implementation.GetAuthById(ctx, id)
 }
 
-// GetUserById do wich the implementation
-func GetUserById(ctx context.Context, id string) (*models.User, error) {
-	return implementation.GetUserById(ctx, id)
+// GetUserByNickName do wich the implementation
+func GetUserByNickName(ctx context.Context, nick_name string) (*models.User, error) {
+	return implementation.GetUserByNickName(ctx, nick_name)
 }
 
-// GetInfoUserByIdAndUserId do which the implementation
-func GetInfoUserByIdAndUserId(ctx context.Context, id string, user_id string) (*models.InfoUser, error) {
-	return implementation.GetInfoUserByIdAndUserId(ctx, id, user_id)
+// GetInfoUserByUserId do which the implementation
+func GetInfoUserByUserId(ctx context.Context, user_id string) (*models.InfoUser, error) {
+	return implementation.GetInfoUserByUserId(ctx, user_id)
 }
 
 // GetProtocolById do which the implementation
@@ -82,9 +82,9 @@ func GetQueryKeyByUrlId(ctx context.Context, url_id string) ([]*models.QueryKey,
 	return implementation.GetQueryKeyByUrlId(ctx, url_id)
 }
 
-// GetQueryValueByUrlId do which the implementation
-func GetQueryValueByUrlId(ctx context.Context, url_id string) ([]*models.QueryValue, error) {
-	return implementation.GetQueryValueByUrlId(ctx, url_id)
+// GetQueryValueByUserId do which the implementation
+func GetQueryValueByUserId(ctx context.Context, user_id string) ([]*models.QueryValue, error) {
+	return implementation.GetQueryValueByUserId(ctx, user_id)
 }
 
 // GetEndPointByUrlId do which the implementation

@@ -1,30 +1,33 @@
 package models
 
 type Url struct {
-	Id         string `url:"id"`
-	Domain     string `url:"domain"`
-	ProtocolId string `url:"protocol_id"`
+	Id         string `json:"id"`
+	Domain     string `json:"domain"`
+	ProtocolId string `json:"protocol_id"`
 }
 
 type Protocol struct {
-	Id       string `url:"id"`
-	Protocol string `url:"protocol"`
+	Id       string `json:"id"`
+	Protocol string `json:"protocol"`
 }
 
 type QueryKey struct {
-	Id       int    `url:"id"`
-	KeyParam string `url:"key_param"`
-	UrlId    string `url:"url_id"`
+	Number   int    `json:"number"`
+	Id       int    `json:"id"`
+	KeyParam string `json:"key_param"`
+	UrlId    string `json:"url_id"`
 }
 
 type QueryValue struct {
-	Id         int    `url:"id"`
-	ValueParam string `url:"value_param"`
-	UrlId      string `url:"url_id"`
+	Number     int    `json:"number"`
+	Id         int    `json:"id"`
+	ValueParam string `json:"value_param"`
+	UserId     string `json:"user_id"`
 }
 
 type Endpoint struct {
-	Id       int    `url:"id"`
-	Endpoint string `url:"endpoint"`
-	UrlId    string `url:"url_id"`
+	Number   int    `json:"number"`
+	Id       int    `json:"id"`
+	Endpoint string `json:"endpoint"`
+	UrlId    string `json:"url_id"`
 }

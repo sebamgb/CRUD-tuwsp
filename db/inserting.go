@@ -11,9 +11,9 @@ import (
 // Inserting userAuth
 func (mssql *SQLServer) InsertIntoAuths(ctx context.Context, auth *models.Auth) error {
 	// preparing statement
-	query := `INSERT INTO tuwsp_info.auths (id, email, created_at, password)
+	query := `INSERT INTO info.auths (id, email, created_at, password)
 	SELECT @p1, @p2, @p3, @p4
-	WHERE NOT EXISTS(SELECT 1 FROM auths WHERE id = @p5)`
+	WHERE NOT EXISTS(SELECT 1 FROM info.auths WHERE id = @p5)`
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
 	// insert
@@ -38,9 +38,9 @@ func (mssql *SQLServer) InsertIntoAuths(ctx context.Context, auth *models.Auth) 
 // Inserting protocol
 func (mssql *SQLServer) InsertIntoProtocols(ctx context.Context, protocol *models.Protocol) error {
 	// preparing statement
-	query := `INSERT INTO protocols (id, protocol)
+	query := `INSERT INTO url.protocols (id, protocol)
 	SELECT @p1, @p2
-	WHERE NOT EXISTS(SELECT 1 FROM protocols WHERE id = @p3)`
+	WHERE NOT EXISTS(SELECT 1 FROM url.protocols WHERE id = @p3)`
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
 	// insert
@@ -63,9 +63,9 @@ func (mssql *SQLServer) InsertIntoProtocols(ctx context.Context, protocol *model
 // inserting url
 func (mssql *SQLServer) InsertIntoURLs(ctx context.Context, url *models.Url) error {
 	// preparing statement
-	query := `INSERT INTO urls (id, domain, protocol_id)
+	query := `INSERT INTO url.urls (id, domain, protocol_id)
 	SELECT @p1, @p2, @p3
-	WHERE NOT EXISTS(SELECT 1 FROM urls WHERE id = @p4)`
+	WHERE NOT EXISTS(SELECT 1 FROM url.urls WHERE id = @p4)`
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
 	// insert
@@ -89,16 +89,18 @@ func (mssql *SQLServer) InsertIntoURLs(ctx context.Context, url *models.Url) err
 // inserting endpoint
 func (mssql *SQLServer) InsertIntoEndpoints(ctx context.Context, endpoint *models.Endpoint) error {
 	// preparing statement
-	query := `INSERT INTO endpoints (id, endpoint, url_id)
-	SELECT @p1, @p2, @p3
-	WHERE NOT EXISTS(SELECT 1 FROM endpoints WHERE id = @p4)`
+	query := `INSERT INTO url.endpoints (number, id, endpoint, url_id)
+	SELECT @p1, @p2, @p3, @p4
+	WHERE NOT EXISTS(SELECT 1 FROM url.endpoints WHERE number = @p5 AND url_id = @p6)`
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
 	// insert
 	result, err := stmt.
-		Exec(endpoint.Id,
+		Exec(endpoint.Number,
+			endpoint.Id,
 			endpoint.Endpoint,
-			endpoint.UrlId, endpoint.Id)
+			endpoint.UrlId,
+			endpoint.Number, endpoint.UrlId)
 	if err != nil {
 		return err
 	}
@@ -115,16 +117,18 @@ func (mssql *SQLServer) InsertIntoEndpoints(ctx context.Context, endpoint *model
 // Inserting queryKey
 func (mssql *SQLServer) InsertIntoQueryKeys(ctx context.Context, querykey *models.QueryKey) error {
 	// preparing statement
-	query := `INSERT INTO query_keys (id, key_param, url_id)
-	SELECT @p1, @p2, @p3
-	WHERE NOT EXISTS(SELECT 1 FROM query_keys WHERE id = @p4)`
+	query := `INSERT INTO url.query_keys (number, id, key_param, url_id)
+	SELECT @p1, @p2, @p3, @p4
+	WHERE NOT EXISTS(SELECT 1 FROM url.query_keys WHERE number = @p5 AND url_id = @p6)`
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
 	// insert
 	result, err := stmt.
-		Exec(querykey.Id,
+		Exec(querykey.Number,
+			querykey.Id,
 			querykey.KeyParam,
-			querykey.UrlId, querykey.Id)
+			querykey.UrlId,
+			querykey.Number, querykey.UrlId)
 	if err != nil {
 		return err
 	}
@@ -141,17 +145,20 @@ func (mssql *SQLServer) InsertIntoQueryKeys(ctx context.Context, querykey *model
 // inserting queryValue
 func (mssql *SQLServer) InsertIntoQueryValues(ctx context.Context, queryvalue *models.QueryValue) error {
 	// preparing statement
-	query := `INSERT INTO query_values (id, value_param, url_id)
-	SELECT @p1, @p2, @p3
-	WHERE NOT EXISTS(SELECT 1 FROM query_values WHERE id = @p4)`
+	query := `INSERT INTO url.query_values (number, id, value_param, user_id)
+	SELECT @p1, @p2, @p3, @p4
+	WHERE NOT EXISTS(SELECT 1 FROM url.query_values WHERE number = @p5 AND user_id = @p6)`
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
 	// insert
 	result, err := stmt.
-		Exec(queryvalue.Id,
+		Exec(queryvalue.Number,
+			queryvalue.Id,
 			queryvalue.ValueParam,
-			queryvalue.UrlId, queryvalue.Id)
+			queryvalue.UserId,
+			queryvalue.Number, queryvalue.UserId)
 	if err != nil {
+		fmt.Printf("err: %v\n", err)
 		return err
 	}
 	// rows affected?
@@ -167,9 +174,9 @@ func (mssql *SQLServer) InsertIntoQueryValues(ctx context.Context, queryvalue *m
 // Inserting data users
 func (mssql *SQLServer) InsertIntoUsers(ctx context.Context, user *models.User) error {
 	// preparing statement
-	query := `INSERT INTO users (id, name, nick_name, url_id)
+	query := `INSERT INTO url.users (id, name, nick_name, url_id)
 	SELECT @p1, @p2, @p3, @p4
-	WHERE NOT EXISTS(SELECT 1 FROM users WHERE id = @p5)`
+	WHERE NOT EXISTS(SELECT 1 FROM url.users WHERE id = @p5)`
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
 	// insert
@@ -194,9 +201,9 @@ func (mssql *SQLServer) InsertIntoUsers(ctx context.Context, user *models.User) 
 // Inserting infoUser
 func (mssql *SQLServer) InsertIntoInfoUsers(ctx context.Context, infouser *models.InfoUser) error {
 	// preparing statement
-	query := `INSERT INTO info_users (id, phone, country, cod_country, birthday, user_id)
+	query := `INSERT INTO url.info_users (id, phone, country, cod_country, birthday, user_id)
 	SELECT @p1, @p2, @p3, @p4, @p5, @p6
-	WHERE NOT EXISTS(SELECT 1 FROM info_users WHERE id = @p7)`
+	WHERE NOT EXISTS(SELECT 1 FROM url.info_users WHERE id = @p7)`
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
 	// insert
