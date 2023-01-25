@@ -12,17 +12,45 @@ import (
 
 // BindRoute implement Router mux of gorilla for call
 func BindRoute(s server.Server, r *mux.Router) {
-	r.Path("/login").Handler(handlers.Login(s))
-	r.Path("/signup").Handler(handlers.Signup(s))
 	public := r.NewRoute().Subrouter()
-	private := r.NewRoute().Subrouter()
+	private := r.PathPrefix("/api-tuwsp/v1").Subrouter()
 	private.
 		Use(middlewares.AuthMiddleware(s))
-	// Insert paths
-	// user:
+	// entrypoint
 	public.
+		Path("/login").
+		Handler(handlers.LoginHandler(s)).
+		Methods(http.MethodPost)
+	public.
+		Path("/validate").
+		Handler(handlers.ValidateHandler(s)).
+		Methods(http.MethodPost)
+	public.
+		Path("/signup").
+		Handler(handlers.SignupHandler(s)).
+		Methods(http.MethodPost)
+	public.
+		Path("/form").
+		Handler(handlers.GetFormByTitleHandler(s)).
+		Methods(http.MethodGet)
+	// Insert paths
+	// info:
+	private.
+		Handle("/forms", handlers.InsertFormHandler(s)).
+		Methods(http.MethodPost)
+	private.
+		Handle("/logins", handlers.InsertLoginHandler(s)).
+		Methods(http.MethodPost)
+	private.
+		Handle("/signups", handlers.InsertSignupHandler(s)).
+		Methods(http.MethodPost)
+	private.
+		Handle("/dashboards", handlers.InsertDashboardHandler(s)).
+		Methods(http.MethodPost)
+	private.
 		Handle("/auths", handlers.InsertAuthHandler(s)).
 		Methods(http.MethodPost)
+	// user:
 	public.
 		Handle("/users", handlers.InsertUserHandler(s)).
 		Methods(http.MethodPost)
@@ -46,15 +74,34 @@ func BindRoute(s server.Server, r *mux.Router) {
 		Handle("/query-values", handlers.InsertQueryValueHandler(s)).
 		Methods(http.MethodPost)
 	// Get paths
+	// info:
+	private.
+		Handle("/me", handlers.MeHandler(s)).
+		Methods(http.MethodGet)
+	private.
+		Handle("/login", handlers.GetLoginByAuthIdHandler(s)).
+		Methods(http.MethodGet)
+	private.
+		Handle("/signup", handlers.GetSignupByIdHandler(s)).
+		Methods(http.MethodGet)
+	private.
+		Handle("/dashboard", handlers.GetDashboardByAuthIdHandler(s)).
+		Methods(http.MethodGet)
+	private.
+		Handle("/auth", handlers.GetAuthByEmailHandler(s)).
+		Methods(http.MethodGet)
 	// user:
 	public.
-		Handle("/auths", handlers.GetAuthHandler(s)).
+		Handle("/users-by-nick-name", handlers.GetUserByNickNameHandler(s)).
 		Methods(http.MethodGet)
 	public.
-		Handle("/users", handlers.GetUserHandler(s)).
+		Handle("/users-by-id", handlers.GetUserByIdHandler(s)).
 		Methods(http.MethodGet)
 	public.
-		Handle("/info-users", handlers.GetInfoUserHandler(s)).
+		Handle("/info-users-by-id", handlers.GetInfoUserByUserIdHandler(s)).
+		Methods(http.MethodGet)
+	public.
+		Handle("/info-users-phone", handlers.GetInfoUserByPhoneHandler(s)).
 		Methods(http.MethodGet)
 	// url:
 	public.
@@ -73,6 +120,87 @@ func BindRoute(s server.Server, r *mux.Router) {
 		Handle("/query-values", handlers.GetQueryValueHandler(s))
 
 	// Update paths
-	// user:
+	// info:
+	private.
+		Handle("/forms/{id}", handlers.UpdateFormHandler(s)).
+		Methods(http.MethodPut)
+	private.
+		Handle("/logins/{id}", handlers.UpdateLoginHandler(s)).
+		Methods(http.MethodPut)
+	private.
+		Handle("/signups/{id}", handlers.UpdateSignupHandler(s)).
+		Methods(http.MethodPut)
+	private.
+		Handle("/dashboards/{id}", handlers.UpdateDashboardHandler(s)).
+		Methods(http.MethodPut)
+	private.
+		Handle("/auths/{id}", handlers.UpdateAuthHandler(s)).
+		// user:
+		private.
+		Handle("/users/{id}", handlers.UpdateUserHandler(s)).
+		Methods(http.MethodPut)
+	private.
+		Handle("/info-users/{id}", handlers.UpdateInfoUserHandler(s)).
+		Methods(http.MethodPut)
 	// url:
+	private.
+		Handle("/protocols/{id}", handlers.UpdateProtocolHandler(s)).
+		Methods(http.MethodPut)
+	private.
+		Handle("/urls/{id}", handlers.UpdateUrlHandler(s)).
+		Methods(http.MethodPut)
+	private.
+		Handle("/endpoints/{id}", handlers.UpdateEndpointHandler(s)).
+		Methods(http.MethodPut)
+	private.
+		Handle("/query-keys/{id}", handlers.UpdateQueryKeyHandler(s)).
+		Methods(http.MethodPut)
+	private.
+		Handle("/query-values/{id}", handlers.UpdateQueryValueHandler(s)).
+		Methods(http.MethodPut)
+	// Delete paths
+	// info:
+	private.
+		Handle("/forms/{id}", handlers.DeleteFormHandler(s)).
+		Methods(http.MethodDelete)
+	private.
+		Handle("/logins/{id}", handlers.DeleteLoginHandler(s)).
+		Methods(http.MethodDelete)
+	private.
+		Handle("/signups/{id}", handlers.DeleteSignupHandler(s)).
+		Methods(http.MethodDelete)
+	private.
+		Handle("/dashboards/{id}", handlers.DeleteDashboardHandler(s)).
+		Methods(http.MethodDelete)
+	private.
+		Handle("/auths/{id}", handlers.DeleteAuthHandler(s)).
+		Methods(http.MethodDelete)
+	// user:
+	private.
+		Handle("/users/{id}", handlers.DeleteUserHandler(s)).
+		Methods(http.MethodDelete)
+	private.
+		Handle("/info-users/{id}", handlers.DeleteInfoUserHandler(s)).
+		Methods(http.MethodDelete)
+	// url:
+	private.
+		Handle("/protocols/{id}", handlers.DeleteProtocolHandler(s)).
+		Methods(http.MethodDelete)
+	private.
+		Handle("/urls/{id}", handlers.DeleteUrlHandler(s)).
+		Methods(http.MethodDelete)
+	private.
+		Handle("/endpoints/{id}", handlers.DeleteEndpointHandler(s)).
+		Methods(http.MethodDelete)
+	private.
+		Handle("/query-keys/{id}", handlers.DeleteQueryKeyHandler(s)).
+		Methods(http.MethodDelete)
+	private.
+		Handle("/query-values/{id}", handlers.DeleteQueryValueHandler(s)).
+		Methods(http.MethodDelete)
+	// Get all paths
+	// info:
+	private.
+		Handle("/forms", handlers.GetAllFormsHandler(s)).
+		Methods(http.MethodGet)
 }

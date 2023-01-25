@@ -8,15 +8,26 @@ import (
 
 type Repository interface {
 	// Gets
+	GetFormByTitle(ctx context.Context, title string) (*models.Form, error)
+	GetLoginByAuthId(ctx context.Context, auth_id string) (*models.Login, error)
+	GetSignupById(ctx context.Context, id string) (*models.Signup, error)
+	GetDashboardByAuthId(ctx context.Context, auth_id string) (*models.Dashboard, error)
 	GetAuthById(ctx context.Context, id string) (*models.Auth, error)
+	GetAuthByEmail(ctx context.Context, email string) (*models.Auth, error)
 	GetUserByNickName(ctx context.Context, nick_name string) (*models.User, error)
+	GetUserById(ctx context.Context, id string) (*models.User, error)
 	GetInfoUserByUserId(ctx context.Context, user_id string) (*models.InfoUser, error)
+	GetInfoUserByPhone(ctx context.Context, phone int) (*models.InfoUser, error)
 	GetProtocolById(ctx context.Context, id string) (*models.Protocol, error)
 	GetUrlById(ctx context.Context, id string) (*models.Url, error)
 	GetQueryKeyByUrlId(ctx context.Context, url_id string) ([]*models.QueryKey, error)
 	GetQueryValueByUserId(ctx context.Context, user_id string) ([]*models.QueryValue, error)
 	GetEndPointByUrlId(ctx context.Context, url_id string) ([]*models.Endpoint, error)
 	// Inserts
+	InsertIntoSignups(ctx context.Context, signup *models.Signup) error
+	InsertIntoLogins(ctx context.Context, login *models.Login) error
+	InsertIntoForms(ctx context.Context, form *models.Form) error
+	InsertIntoDashboards(ctx context.Context, dashboard *models.Dashboard) error
 	InsertIntoAuths(ctx context.Context, auth *models.Auth) error
 	InsertIntoProtocols(ctx context.Context, protocol *models.Protocol) error
 	InsertIntoURLs(ctx context.Context, url *models.Url) error
@@ -34,6 +45,11 @@ type Repository interface {
 	DeleteUsers(ctx context.Context, user *models.User) error
 	DeleteInfoUsers(ctx context.Context, infouser *models.InfoUser) error
 	// Update
+	UpdateSignups(ctx context.Context, signup *models.Signup) error
+	UpdateLogins(ctx context.Context, login *models.Login) error
+	UpdateForms(ctx context.Context, form *models.Form) error
+	UpdateDashboards(ctx context.Context, dashboard *models.Dashboard) error
+	UpdateAuths(ctx context.Context, auth *models.Auth) error
 	UpdateProtocols(ctx context.Context, protocol *models.Protocol) error
 	UpdateURLs(ctx context.Context, url *models.Url) error
 	UpdateEndpoints(ctx context.Context, endpoint *models.Endpoint) error
@@ -52,9 +68,36 @@ func SetRepository(repository Repository) {
 	implementation = repository
 }
 
+/* Gets */
+
+// GetFormByTitle do which the implementation
+func GetFormByTitle(ctx context.Context, title string) (*models.Form, error) {
+	return implementation.GetFormByTitle(ctx, title)
+}
+
+// GetLoginByAuthId do wich the implementation
+func GetLoginByAuthId(ctx context.Context, auth_id string) (*models.Login, error) {
+	return implementation.GetLoginByAuthId(ctx, auth_id)
+}
+
+// GetSignupById do wich the implementation
+func GetSignupById(ctx context.Context, id string) (*models.Signup, error) {
+	return implementation.GetSignupById(ctx, id)
+}
+
+// GetDashboardByAuthId do wich the implementation
+func GetDashboardByAuthId(ctx context.Context, auth_id string) (*models.Dashboard, error) {
+	return implementation.GetDashboardByAuthId(ctx, auth_id)
+}
+
 // GetAuthById do wich the implementation
 func GetAuthById(ctx context.Context, id string) (*models.Auth, error) {
 	return implementation.GetAuthById(ctx, id)
+}
+
+// GetAuthByEmail do wich the implementation
+func GetAuthByEmail(ctx context.Context, email string) (*models.Auth, error) {
+	return implementation.GetAuthByEmail(ctx, email)
 }
 
 // GetUserByNickName do wich the implementation
@@ -62,9 +105,19 @@ func GetUserByNickName(ctx context.Context, nick_name string) (*models.User, err
 	return implementation.GetUserByNickName(ctx, nick_name)
 }
 
+// GetUserById do wich the implementation
+func GetUserById(ctx context.Context, id string) (*models.User, error) {
+	return implementation.GetUserById(ctx, id)
+}
+
 // GetInfoUserByUserId do which the implementation
 func GetInfoUserByUserId(ctx context.Context, user_id string) (*models.InfoUser, error) {
 	return implementation.GetInfoUserByUserId(ctx, user_id)
+}
+
+// GetInfoUserByPhone do which the implementation
+func GetInfoUserByPhone(ctx context.Context, phone int) (*models.InfoUser, error) {
+	return implementation.GetInfoUserByPhone(ctx, phone)
 }
 
 // GetProtocolById do which the implementation
@@ -90,6 +143,28 @@ func GetQueryValueByUserId(ctx context.Context, user_id string) ([]*models.Query
 // GetEndPointByUrlId do which the implementation
 func GetEndPointByUrlId(ctx context.Context, url_id string) ([]*models.Endpoint, error) {
 	return implementation.GetEndPointByUrlId(ctx, url_id)
+}
+
+/* Inserts */
+
+// InsertIntoSignups do which the implementation
+func InsertIntoSignups(ctx context.Context, signup *models.Signup) error {
+	return implementation.InsertIntoSignups(ctx, signup)
+}
+
+// InsertIntoLogins do which the implementation
+func InsertIntoLogins(ctx context.Context, login *models.Login) error {
+	return implementation.InsertIntoLogins(ctx, login)
+}
+
+// InsertIntoForms do which the implementation
+func InsertIntoForms(ctx context.Context, form *models.Form) error {
+	return implementation.InsertIntoForms(ctx, form)
+}
+
+// InsertIntoDashboards do which the implementation
+func InsertIntoDashboards(ctx context.Context, dashboard *models.Dashboard) error {
+	return implementation.InsertIntoDashboards(ctx, dashboard)
 }
 
 // InsertIntoAuths do which the implementation
@@ -132,6 +207,8 @@ func InsertIntoInfoUsers(ctx context.Context, infouser *models.InfoUser) error {
 	return implementation.InsertIntoInfoUsers(ctx, infouser)
 }
 
+/* Deletes */
+
 // DeleteProtocols do which the implementation
 func DeleteProtocols(ctx context.Context, protocol *models.Protocol) error {
 	return implementation.DeleteProtocols(ctx, protocol)
@@ -165,6 +242,33 @@ func DeleteUsers(ctx context.Context, user *models.User) error {
 // DeleteInfoUsers do which the implementation
 func DeleteInfoUsers(ctx context.Context, infouser *models.InfoUser) error {
 	return implementation.DeleteInfoUsers(ctx, infouser)
+}
+
+/* Updates */
+
+// UpdateLogins do which the implementation
+func UpdateLogins(ctx context.Context, login *models.Login) error {
+	return implementation.UpdateLogins(ctx, login)
+}
+
+// UpdateSignups do which the implementation
+func UpdateSignups(ctx context.Context, signup *models.Signup) error {
+	return implementation.UpdateSignups(ctx, signup)
+}
+
+// UpdateForms do which the implementation
+func UpdateForms(ctx context.Context, form *models.Form) error {
+	return implementation.UpdateForms(ctx, form)
+}
+
+// UpdateDashboards do which the implementation
+func UpdateDashboards(ctx context.Context, dashboard *models.Dashboard) error {
+	return implementation.UpdateDashboards(ctx, dashboard)
+}
+
+// UpdateAuths do which the implementation
+func UpdateAuths(ctx context.Context, auth *models.Auth) error {
+	return implementation.UpdateAuths(ctx, auth)
 }
 
 // UpdateProtocols do which the implementation

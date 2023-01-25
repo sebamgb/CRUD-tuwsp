@@ -3,10 +3,97 @@ package db
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"tuwsp/models"
 )
+
+// Inserting login
+func (mssql *SQLServer) InsertIntoLogins(ctx context.Context, login *models.Login) error {
+	// preparing statement
+	query := `INSERT INTO info.logins (id, email, created_at, password, log_out, auth_id, form_id)
+	SELECT @p1, @p2, @p3, @p4, @p5, @p6, @p7
+	WHERE NOT EXISTS(SELECT 1 FROM info.logins WHERE id = @p8)`
+	stmt := MakeStatement(mssql, ctx, query)
+	defer CloseStatement(stmt)
+	// insert
+	_, err := stmt.
+		Exec(login.Id,
+			login.Email,
+			login.CreatedAt,
+			login.Password,
+			login.LogOut,
+			login.AuthId,
+			login.FormId, login.Id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Inserting dashboard
+func (mssql *SQLServer) InsertIntoDashboards(ctx context.Context, dashboard *models.Dashboard) error {
+	// preparing statement
+	query := `INSERT INTO info.dashboards (id, title, menu, app, owner)
+	SELECT @p1, @p2, @p3, @p4, @p5
+	WHERE NOT EXISTS(SELECT 1 FROM info.dashboards WHERE id = @p6)`
+	stmt := MakeStatement(mssql, ctx, query)
+	defer CloseStatement(stmt)
+	// insert
+	_, err := stmt.
+		Exec(dashboard.Id,
+			dashboard.Title,
+			dashboard.Menu,
+			dashboard.App,
+			dashboard.Owner, dashboard.Id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Inserting form
+func (mssql *SQLServer) InsertIntoForms(ctx context.Context, form *models.Form) error {
+	// preparing statement
+	query := `INSERT INTO info.forms (id, title, app, key_value)
+	SELECT @p1, @p2, @p3, @p4
+	WHERE NOT EXISTS(SELECT 1 FROM info.forms WHERE id = @p5)`
+	stmt := MakeStatement(mssql, ctx, query)
+	defer CloseStatement(stmt)
+	// insert
+	_, err := stmt.
+		Exec(form.Id,
+			form.Title,
+			form.App,
+			form.Key_Value, form.Id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Inserting signup
+func (mssql *SQLServer) InsertIntoSignups(ctx context.Context, signup *models.Signup) error {
+	// preparing statement
+	query := `INSERT INTO info.signups (id, name, nick_name, email, phone, password, confirm_password, form_id)
+	SELECT @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8
+	WHERE NOT EXISTS(SELECT 1 FROM info.signups WHERE id = @p9)`
+	stmt := MakeStatement(mssql, ctx, query)
+	defer CloseStatement(stmt)
+	// insert
+	_, err := stmt.
+		Exec(signup.Id,
+			signup.Name,
+			signup.NickName,
+			signup.Email,
+			signup.Phone,
+			signup.Password,
+			signup.ConfirmPassword,
+			signup.FormId, signup.Id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 // Inserting userAuth
 func (mssql *SQLServer) InsertIntoAuths(ctx context.Context, auth *models.Auth) error {
@@ -17,20 +104,13 @@ func (mssql *SQLServer) InsertIntoAuths(ctx context.Context, auth *models.Auth) 
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
 	// insert
-	result, err := stmt.
+	_, err := stmt.
 		Exec(auth.Id,
 			auth.Email,
-			auth.CratedAt,
+			auth.CreatedAt,
 			auth.Password, auth.Id)
 	if err != nil {
 		return err
-	}
-	// rows affected?
-	if rows, err := result.RowsAffected(); err != nil {
-		return fmt.Errorf("error: %s when try to get rows affected",
-			err.Error())
-	} else {
-		log.Printf("Rows Affected: %d", rows)
 	}
 	return nil
 }
@@ -44,18 +124,11 @@ func (mssql *SQLServer) InsertIntoProtocols(ctx context.Context, protocol *model
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
 	// insert
-	result, err := stmt.
+	_, err := stmt.
 		Exec(protocol.Id,
 			protocol.Protocol, protocol.Id)
 	if err != nil {
 		return err
-	}
-	// rows affected?
-	if rows, err := result.RowsAffected(); err != nil {
-		return fmt.Errorf("error: %s when try to get rows affected",
-			err.Error())
-	} else {
-		log.Printf("Rows Affected: %d", rows)
 	}
 	return nil
 }
@@ -69,19 +142,12 @@ func (mssql *SQLServer) InsertIntoURLs(ctx context.Context, url *models.Url) err
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
 	// insert
-	result, err := stmt.
+	_, err := stmt.
 		Exec(url.Id,
 			url.Domain,
 			url.ProtocolId, url.Id)
 	if err != nil {
 		return err
-	}
-	// rows affected?
-	if rows, err := result.RowsAffected(); err != nil {
-		return fmt.Errorf("error: %s when try to get rows affected",
-			err.Error())
-	} else {
-		log.Printf("Rows Affected: %d", rows)
 	}
 	return nil
 }
@@ -95,7 +161,7 @@ func (mssql *SQLServer) InsertIntoEndpoints(ctx context.Context, endpoint *model
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
 	// insert
-	result, err := stmt.
+	_, err := stmt.
 		Exec(endpoint.Number,
 			endpoint.Id,
 			endpoint.Endpoint,
@@ -103,13 +169,6 @@ func (mssql *SQLServer) InsertIntoEndpoints(ctx context.Context, endpoint *model
 			endpoint.Number, endpoint.UrlId)
 	if err != nil {
 		return err
-	}
-	// rows affected?
-	if rows, err := result.RowsAffected(); err != nil {
-		return fmt.Errorf("error: %s when try to get rows affected",
-			err.Error())
-	} else {
-		log.Printf("Rows Affected: %d", rows)
 	}
 	return nil
 }
@@ -123,7 +182,7 @@ func (mssql *SQLServer) InsertIntoQueryKeys(ctx context.Context, querykey *model
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
 	// insert
-	result, err := stmt.
+	_, err := stmt.
 		Exec(querykey.Number,
 			querykey.Id,
 			querykey.KeyParam,
@@ -131,13 +190,6 @@ func (mssql *SQLServer) InsertIntoQueryKeys(ctx context.Context, querykey *model
 			querykey.Number, querykey.UrlId)
 	if err != nil {
 		return err
-	}
-	// rows affected?
-	if rows, err := result.RowsAffected(); err != nil {
-		return fmt.Errorf("error: %s when try to get rows affected",
-			err.Error())
-	} else {
-		log.Printf("Rows Affected: %d", rows)
 	}
 	return nil
 }
@@ -151,7 +203,7 @@ func (mssql *SQLServer) InsertIntoQueryValues(ctx context.Context, queryvalue *m
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
 	// insert
-	result, err := stmt.
+	_, err := stmt.
 		Exec(queryvalue.Number,
 			queryvalue.Id,
 			queryvalue.ValueParam,
@@ -160,13 +212,6 @@ func (mssql *SQLServer) InsertIntoQueryValues(ctx context.Context, queryvalue *m
 	if err != nil {
 		fmt.Printf("err: %v\n", err)
 		return err
-	}
-	// rows affected?
-	if rows, err := result.RowsAffected(); err != nil {
-		return fmt.Errorf("error: %s when try to get rows affected",
-			err.Error())
-	} else {
-		log.Printf("Rows Affected: %d", rows)
 	}
 	return nil
 }
@@ -180,20 +225,13 @@ func (mssql *SQLServer) InsertIntoUsers(ctx context.Context, user *models.User) 
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
 	// insert
-	result, err := stmt.
+	_, err := stmt.
 		Exec(user.Id,
 			user.Name,
 			user.NickName,
 			user.UrlId, user.Id)
 	if err != nil {
 		return err
-	}
-	// rows affected?
-	if rows, err := result.RowsAffected(); err != nil {
-		return fmt.Errorf("error: %s when try to get rows affected",
-			err.Error())
-	} else {
-		log.Printf("Rows Affected: %d", rows)
 	}
 	return nil
 }
@@ -207,7 +245,7 @@ func (mssql *SQLServer) InsertIntoInfoUsers(ctx context.Context, infouser *model
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
 	// insert
-	result, err := stmt.
+	_, err := stmt.
 		Exec(
 			infouser.Id,
 			infouser.Phone,
@@ -217,13 +255,6 @@ func (mssql *SQLServer) InsertIntoInfoUsers(ctx context.Context, infouser *model
 			infouser.UserId, infouser.Id)
 	if err != nil {
 		return err
-	}
-	// rows affected?
-	if rows, err := result.RowsAffected(); err != nil {
-		return fmt.Errorf("error: %s when try to get rows affected",
-			err.Error())
-	} else {
-		log.Printf("Rows Affected: %d", rows)
 	}
 	return nil
 }
