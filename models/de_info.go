@@ -2,6 +2,25 @@ package models
 
 import "github.com/golang-sql/civil"
 
+type KeyValue struct {
+	Id                         string `json:"id"`
+	Error                      string `json:"error"` // Error message
+	Title                      string `json:"title"` // Title of the form
+	LabelName                  string `json:"label_name"`
+	PlaceholderName            string `json:"placeholder_name"`
+	LabelNickname              string `json:"label_nickname"`
+	PlaceholderNickname        string `json:"placeholder_nickname"`
+	LabelEmail                 string `json:"label_email"`
+	PlaceholderEmail           string `json:"placeholder_email"`
+	LabelPhone                 string `json:"label_phone"`
+	PlaceholderPhone           string `json:"placeholder_phone"`
+	LabelPassword              string `json:"label_password"`
+	PlaceholderPassword        string `json:"placeholder_password"`
+	LabelConfirmPassword       string `json:"label_confirm_password"`
+	PlaceholderConfirmPassword string `json:"placeholder_confirm_password"`
+	InputSubmit                string `json:"input_submit"`
+}
+
 type Dashboard struct {
 	Id    string `json:"id"`
 	Title string `json:"title"`

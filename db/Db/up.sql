@@ -18,6 +18,32 @@ BEGIN
 END
 GO
 IF NOT EXISTS (SELECT * FROM sys.tables
+ WHERE name = 'key_values' AND schema_id = (SELECT schema_id FROM sys.schemas
+ WHERE name = N'info'))
+BEGIN
+    CREATE TABLE info.key_values
+    (
+        id NVARCHAR(32),
+        error NVARCHAR(50) NULL,
+        title NVARCHAR(50) NULL,
+        label_name NVARCHAR(50) NULL,
+        placeholder_name NVARCHAR(50) NULL,
+        label_nickname NVARCHAR(50) NULL,
+        placeholder_nickname NVARCHAR(50) NULL,
+        label_email NVARCHAR(50) NULL,
+        placeholder_email NVARCHAR(50) NULL,
+        label_phone NVARCHAR(50) NULL,
+        placeholder_phone NVARCHAR(50) NULL,
+        label_password NVARCHAR(50) NULL,
+        placeholder_password NVARCHAR(50) NULL,
+        label_confirm_password NVARCHAR(50) NULL,
+        placeholder_confirm_password NVARCHAR(50) NULL,
+        input_submit NVARCHAR(50) NULL,
+        CONSTRAINT tuwsp_PK_key_values PRIMARY KEY (id)
+    )
+END
+GO
+IF NOT EXISTS (SELECT * FROM sys.tables
  WHERE name = 'forms' AND schema_id = (SELECT schema_id FROM sys.schemas
  WHERE name = N'info'))
 BEGIN
@@ -26,7 +52,8 @@ BEGIN
         id NVARCHAR(32),
         title NVARCHAR(50) NOT NULL,
         app NVARCHAR(20),
-        key_value NTEXT,
+        key_value NVARCHAR(32) NULL,
+        FOREIGN KEY (key_value) REFERENCES info.key_values(id),
         CONSTRAINT tuwsp_PK_forms PRIMARY KEY (id)
     )
 END
@@ -44,6 +71,25 @@ BEGIN
 END
 GO
 IF NOT EXISTS (SELECT * FROM sys.tables
+ WHERE name = 'signups' AND schema_id = (SELECT schema_id FROM sys.schemas
+ WHERE name = N'info'))
+BEGIN
+    CREATE TABLE info.signups
+    (
+        id NVARCHAR(32),
+        name NVARCHAR(70),
+        nick_name NVARCHAR(50),
+        email NVARCHAR(255) NOT NULL UNIQUE,
+        phone INT,
+        password NVARCHAR(250) NOT NULL,
+        confirm_password NVARCHAR(250) NOT NULL,
+        form_id NVARCHAR(32) NOT NULL,
+        FOREIGN KEY (form_id) REFERENCES info.forms(id),
+        CONSTRAINT tuwsp_PK_signups PRIMARY KEY (id)
+    )
+END
+GO
+IF NOT EXISTS (SELECT * FROM sys.tables
  WHERE name = 'auths' AND schema_id = (SELECT schema_id FROM sys.schemas
  WHERE name = N'info'))
 BEGIN
@@ -53,6 +99,9 @@ BEGIN
         email NVARCHAR(255) NOT NULL UNIQUE,
         created_at DATETIME2 NOT NULL,
         password NVARCHAR(255) NOT NULL,
+        role CHAR(6),
+        signup_id NVARCHAR(32) NOT NULL,
+        FOREIGN KEY (signup_id) REFERENCES info.signups(id),
         CONSTRAINT tuwsp_PK_auths PRIMARY KEY (id)
     )
 END
@@ -156,8 +205,9 @@ BEGIN
     (
         id NVARCHAR(32),
         title NVARCHAR(50) NOT NULL,
-        menu NTEXT,
         app NVARCHAR(20),
+        key_value NVARCHAR(32) NULL,
+        FOREIGN KEY (key_value) REFERENCES info.key_values(id),
         owner NVARCHAR(32) NOT NULL,
         FOREIGN KEY (owner) REFERENCES info.auths(id),
         CONSTRAINT tuwsp_PK_dashboards PRIMARY KEY (id)
@@ -180,25 +230,6 @@ BEGIN
         FOREIGN KEY (auth_id) REFERENCES info.auths(id),
         FOREIGN KEY (form_id) REFERENCES info.forms(id),
         CONSTRAINT tuwsp_PK_logins PRIMARY KEY (id)
-    )
-END
-GO
-IF NOT EXISTS (SELECT * FROM sys.tables
- WHERE name = 'signups' AND schema_id = (SELECT schema_id FROM sys.schemas
- WHERE name = N'info'))
-BEGIN
-    CREATE TABLE info.signups
-    (
-        id NVARCHAR(32),
-        name NVARCHAR(70),
-        nick_name NVARCHAR(50),
-        email NVARCHAR(255) NOT NULL UNIQUE,
-        phone INT,
-        password NVARCHAR(250) NOT NULL,
-        confirm_password NVARCHAR(250) NOT NULL,
-        form_id NVARCHAR(32) NOT NULL,
-        FOREIGN KEY (form_id) REFERENCES info.forms(id),
-        CONSTRAINT tuwsp_PK_signups PRIMARY KEY (id)
     )
 END
 GO
