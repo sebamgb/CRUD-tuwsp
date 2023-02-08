@@ -8,6 +8,149 @@ import (
 	"tuwsp/models"
 )
 
+// UpdateLogins update the email, created_at, password, log_out, auth_id and form_id given from logins by its id
+func (mssql *SQLServer) UpdateLogins(ctx context.Context, login *models.Login) error {
+	// preparing statement
+	query := `UPDATE info.logins
+	SET email = @p1, created_at = @p2, password = @p3, log_out = @p4, auth_id = @p5, form_id = @p6
+	WHERE id = @p7`
+	stmt := MakeStatement(mssql, ctx, query)
+	defer CloseStatement(stmt)
+	// update
+	result, err := stmt.
+		Exec(login.Email,
+			login.CreatedAt,
+			login.Password,
+			login.LogOut,
+			login.AuthId,
+			login.FormId,
+			login.Id)
+	if err != nil {
+		return err
+	}
+	// rows affected?
+	if rows, err := result.RowsAffected(); err != nil {
+		return fmt.Errorf("error: %s when try to get rows affected",
+			err.Error())
+	} else {
+		log.Printf("Rows Affected: %d", rows)
+	}
+	return nil
+}
+
+// UpdateDashboards update the title, menu, app and owner given from dashboards by its id
+func (mssql *SQLServer) UpdateDashboards(ctx context.Context, dashboard *models.Dashboard) error {
+	// preparing statement
+	query := `UPDATE info.dashboards
+	SET title = @p1, menu = @p2, app = @p3, owner = @p4
+	WHERE id = @p5`
+	stmt := MakeStatement(mssql, ctx, query)
+	defer CloseStatement(stmt)
+	// update
+	result, err := stmt.
+		Exec(dashboard.Title,
+			dashboard.Menu,
+			dashboard.App,
+			dashboard.Owner,
+			dashboard.Id)
+	if err != nil {
+		return err
+	}
+	// rows affected?
+	if rows, err := result.RowsAffected(); err != nil {
+		return fmt.Errorf("error: %s when try to get rows affected",
+			err.Error())
+	} else {
+		log.Printf("Rows Affected: %d", rows)
+	}
+	return nil
+}
+
+// UpdateForms update the title, app and key_value given from forms by its id
+func (mssql *SQLServer) UpdateForms(ctx context.Context, form *models.Form) error {
+	// preparing statement
+	query := `UPDATE info.forms
+	SET title = @p1, app = @p2, key_value = @p3
+	WHERE id = @p4`
+	stmt := MakeStatement(mssql, ctx, query)
+	defer CloseStatement(stmt)
+	// update
+	result, err := stmt.
+		Exec(form.Title,
+			form.App,
+			form.Key_Value,
+			form.Id)
+	if err != nil {
+		return err
+	}
+	// rows affected?
+	if rows, err := result.RowsAffected(); err != nil {
+		return fmt.Errorf("error: %s when try to get rows affected",
+			err.Error())
+	} else {
+		log.Printf("Rows Affected: %d", rows)
+	}
+	return nil
+}
+
+// UpdateAuths update the email, created_at, password and signup_id given from auths by its id
+func (mssql *SQLServer) UpdateAuths(ctx context.Context, auth *models.Auth) error {
+	// preparing statement
+	query := `UPDATE info.auths
+	SET email = @p1, created_at = @p2, password = @p3, signup_id = @p4
+	WHERE id = @p5`
+	stmt := MakeStatement(mssql, ctx, query)
+	defer CloseStatement(stmt)
+	// update
+	result, err := stmt.
+		Exec(auth.Email,
+			auth.CreatedAt,
+			auth.Password,
+			auth.SignupId,
+			auth.Id)
+	if err != nil {
+		return err
+	}
+	// rows affected?
+	if rows, err := result.RowsAffected(); err != nil {
+		return fmt.Errorf("error: %s when try to get rows affected",
+			err.Error())
+	} else {
+		log.Printf("Rows Affected: %d", rows)
+	}
+	return nil
+}
+
+// UpdateSignups update the name, nick_name, email, phone, password and form_id given from signups by its id
+func (mssql *SQLServer) UpdateSignups(ctx context.Context, signup *models.Signup) error {
+	// preparing statement
+	query := `UPDATE info.signups
+	SET name = @p1, nick_name = @p2, email = @p3, phone = @p4, password = @p5, form_id = @p6
+	WHERE id = @p7`
+	stmt := MakeStatement(mssql, ctx, query)
+	defer CloseStatement(stmt)
+	// update
+	result, err := stmt.
+		Exec(signup.Name,
+			signup.NickName,
+			signup.Email,
+			signup.Phone,
+			signup.Password,
+			signup.FormId,
+			signup.Id)
+	if err != nil {
+		return err
+	}
+	// rows affected?
+	if rows, err := result.RowsAffected(); err != nil {
+		return fmt.Errorf("error: %s when try to get rows affected",
+			err.Error())
+	} else {
+		log.Printf("Rows Affected: %d", rows)
+	}
+	return nil
+}
+
 // UpdateProtocols update the protocol given from protocols by its id
 func (mssql *SQLServer) UpdateProtocols(ctx context.Context, protocol *models.Protocol) error {
 	// preparing statement

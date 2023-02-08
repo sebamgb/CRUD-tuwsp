@@ -1,218 +1,84 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
-	"time"
 
 	"tuwsp/models"
 	"tuwsp/repository"
 	"tuwsp/server"
 
-	"github.com/golang-jwt/jwt"
-	"github.com/golang-sql/civil"
-	"github.com/segmentio/ksuid"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/gorilla/mux"
 )
 
-const HASHCOST = 13
-
-type SignupLoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-type LoginResponse struct {
-	Token string `json:"token"`
-}
-
-type SignupResponse struct {
-	Id    string `json:"id"`
-	Email string `json:"email"`
-}
-
-// LoginHandler handle logins from auth
-func LoginHandler(s server.Server) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var request = SignupLoginRequest{}
-		// info body decode
-		decode(r, w, &request)
-		// get auth
-		user, err := repository.GetAuthByEmail(r.Context(), request.Email)
-		internalErr(w, err)
-		// unathorized requests
-		if user == nil {
-			http.Error(w, "invalid credentials", http.StatusUnauthorized)
-			return
-		}
-		// compare password hashed
-		if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.Password)); err != nil {
-			http.Error(w, "invalid credentials", http.StatusUnauthorized)
-			return
-		}
-		// making claim for token
-		claim := models.AppClaims{
-			AuthId: user.Id,
-			StandardClaims: jwt.StandardClaims{
-				ExpiresAt: time.Now().Add(2 * time.Hour * 24).Unix(),
-			},
-		}
-		// confection token with claims previosly do
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
-		tokenString, err := token.SignedString([]byte(s.Config().JWTSecret))
-		internalErr(w, err)
-		// making body response
-		encode(w, &LoginResponse{
-			Token: tokenString,
-		})
-	}
+type ValidateResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
 }
 
 // ValidateHandler Compare request with db data
 func ValidateHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var data = SignupLoginRequest{}
-
-		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
-			http.Error(w, "Bad request", http.StatusBadRequest)
-			return
-		}
-
+		var data = models.Login{}
+		// decoding request into body
+		decode(r, w, &data)
 		// Valida los datos contra la base de datos
 		success, message := validateAgainstDB(data.Email, data.Password, r.Context())
-		if !success {
-			w.WriteHeader(http.StatusBadRequest)
-		}
-		json.NewEncoder(w).Encode(&struct {
-			Success bool   `json:"success"`
-			Message string `json:"message"`
-		}{Success: success, Message: message})
-	}
-}
-
-// SignupHandler handle register of users
-func SignupHandler(s server.Server) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var request = SignupLoginRequest{}
-		// info body decode
-		decode(r, w, &request)
-		// hasshing password request
-		hashedPassword, err := bcrypt.
-			GenerateFromPassword([]byte(request.Password), HASHCOST)
-		internalErr(w, err)
-		// random id
-		id, err := ksuid.NewRandom()
-		internalErr(w, err)
-		// making user to db
-		var user = models.Auth{
-			Email:    request.Email,
-			CratedAt: civil.DateTimeOf(time.Now()),
-			Password: string(hashedPassword),
-			Id:       id.String(),
-		}
-		// insert of user
-		err = repository.InsertIntoAuths(r.Context(), &user)
-		internalErr(w, err)
-		// making body response
-		encode(w, &SignupResponse{
-			Id:    user.Id,
-			Email: user.Email,
-		})
-	}
-}
-
-// MeHandler for get the user auth from db locking for the token
-func MeHandler(s server.Server) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// receiving token in format string
-		tokenString := strings.TrimSpace(r.Header.Get("Authorization"))
-		//  Parsing token string
-		token, err := jwt.ParseWithClaims(tokenString, &models.AppClaims{}, func(token *jwt.Token) (interface{}, error) {
-			return []byte(s.Config().JWTSecret), nil
-		})
-		unathorizedError(w, err)
-		// validating token
-		if claims, ok := token.Claims.(*models.AppClaims); ok && token.Valid {
-			user, err := repository.GetAuthById(r.Context(), claims.AuthId)
-			internalErr(w, err)
-			encode(w, &user)
-		} else {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		// encoding response
+		encode(w, &ValidateResponse{Success: success, Message: message})
 	}
 }
 
 /*----- Inserts -----*/
 
-// InsertAuthHandler handle the insert of auths
-// func InsertAuthHandler(s server.Server) http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		var authRequest = models.Auth{}
-// 		decode(r, w, &authRequest)
-// 		// auth created now
-// 		authRequest.CratedAt = civil.DateTimeOf(time.Now())
-// 		internalErr(w, repository.
-// 			InsertIntoAuths(r.Context(), &authRequest))
-// 		encode(w, &authRequest)
-// 	}
-// }
+type InsertUserResponse struct {
+	Id string `json:"id"`
+}
 
 // InsertUserHandler handle the insert of users
 func InsertUserHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userRequest := models.User{}
+		// decoding request into body
 		decode(r, w, &userRequest)
-		internalErr(w, repository.
-			InsertIntoUsers(r.Context(), &userRequest))
-		encode(w, &userRequest)
+		// inserting user
+		err := repository.InsertIntoUsers(r.Context(), &userRequest)
+		internalErr(w, err)
+		// encoding response
+		encode(w, &InsertUserResponse{Id: userRequest.Id})
 	}
+}
+
+type InsertInfoUserResponse struct {
+	Id string `json:"id"`
 }
 
 // InsertInfoUserHandler handle the insert of info_users
 func InsertInfoUserHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		infoUserRequest := models.InfoUser{}
+		// decoding request into body
 		decode(r, w, &infoUserRequest)
-		internalErr(w, repository.
-			InsertIntoInfoUsers(r.Context(), &infoUserRequest))
-		encode(w, &infoUserRequest)
+		// inserting info_user
+		err := repository.InsertIntoInfoUsers(r.Context(), &infoUserRequest)
+		internalErr(w, err)
+		// encoding response
+		encode(w, &InsertInfoUserResponse{Id: infoUserRequest.Id})
 	}
 }
 
 /*----- Gets -----*/
 
-// GetAuthByIdHandler handle the select for auths
-func GetAuthByIdHandler(s server.Server) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		params := r.URL.Query()
-		auth, err := repository.
-			GetAuthById(r.Context(), params.Get("q"))
-		internalErr(w, err)
-		encode(w, &auth)
-	}
-}
-
-// GetAuthByEmailHandler handle the select for auths
-func GetAuthByEmailHandler(s server.Server) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		params := r.URL.Query()
-		auth, err := repository.
-			GetAuthByEmail(r.Context(), params.Get("q"))
-		internalErr(w, err)
-		encode(w, &auth)
-	}
-}
-
 // GetUserByNickNameHandler handle the select for users
 func GetUserByNickNameHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// getting queryparams
 		params := r.URL.Query()
+		// getting user
 		user, err := repository.
 			GetUserByNickName(r.Context(), params.Get("q"))
 		internalErr(w, err)
+		// encoding response
 		encode(w, &user)
 	}
 }
@@ -220,10 +86,13 @@ func GetUserByNickNameHandler(s server.Server) http.HandlerFunc {
 // GetUserByIdHandler handle the select for users
 func GetUserByIdHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// getting queryparams
 		params := r.URL.Query()
+		// getting user
 		user, err := repository.
 			GetUserById(r.Context(), params.Get("q"))
 		internalErr(w, err)
+		// encoding response
 		encode(w, &user)
 	}
 }
@@ -231,10 +100,13 @@ func GetUserByIdHandler(s server.Server) http.HandlerFunc {
 // GetInfoUserByUserIdHandler handle the select for info_users
 func GetInfoUserByUserIdHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// getting queryparams
 		params := r.URL.Query()
+		// getting info_user
 		infouser, err := repository.
 			GetInfoUserByUserId(r.Context(), params.Get("q"))
 		internalErr(w, err)
+		// encoding response
 		encode(w, &infouser)
 	}
 }
@@ -242,15 +114,178 @@ func GetInfoUserByUserIdHandler(s server.Server) http.HandlerFunc {
 // GetInfoUserByPhoneHandler handle the select for info_users
 func GetInfoUserByPhoneHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var infouser *models.InfoUser
+		// trying to convert to int by queryparams
 		phone, err := strconv.Atoi(r.URL.Query().Get("q"))
-		if err != nil {
-			return
-		} else {
-			infouser, err = repository.
-				GetInfoUserByPhone(r.Context(), phone)
-			internalErr(w, err)
-		}
+		internalErr(w, err)
+		// getting info_user
+		infouser, err := repository.
+			GetInfoUserByPhone(r.Context(), phone)
+		internalErr(w, err)
+		// encoding response
 		encode(w, &infouser)
+	}
+}
+
+/*----- Updates -----*/
+
+type UpdateUserResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	Author  string `json:"author"`
+}
+
+// UpdateUserHandler handle the update of users
+func UpdateUserHandler(s server.Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// getting mux vars
+		vars := mux.Vars(r)
+		// getting id from mux vars
+		id := vars["id"]
+		// getting token
+		token, err := getToken(s, r, "Authorization")
+		unathorizedError(w, err)
+		// validating token
+		validateToken(w, token, func(claims *models.AppClaims) {
+			userRequest := models.User{
+				Id: id,
+			}
+			// decoding request into body
+			decode(r, w, &userRequest)
+			// updating user
+			err := repository.UpdateUsers(r.Context(), &userRequest)
+			internalErr(w, err)
+			// encoding response
+			encode(w, &UpdateUserResponse{Success: true, Message: "User updated successfully", Author: claims.AuthId})
+		})
+	}
+}
+
+type UpdateInfoUserResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	Author  string `json:"author"`
+}
+
+// UpdateInfoUserHandler handle the update of info_users
+func UpdateInfoUserHandler(s server.Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// getting mux vars
+		vars := mux.Vars(r)
+		// getting id from mux vars
+		id := vars["id"]
+		// getting token
+		token, err := getToken(s, r, "Authorization")
+		unathorizedError(w, err)
+		// validating token
+		validateToken(w, token, func(claims *models.AppClaims) {
+			infoUserRequest := models.InfoUser{
+				Id: id,
+			}
+			// decoding request into body
+			decode(r, w, &infoUserRequest)
+			// updating info_user
+			err := repository.UpdateInfoUsers(r.Context(), &infoUserRequest)
+			internalErr(w, err)
+			// encoding response
+			encode(w, &UpdateInfoUserResponse{Success: true, Message: "InfoUser updated successfully", Author: claims.AuthId})
+		})
+	}
+}
+
+/*----- Deletes -----*/
+
+type DeleteUserResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	Author  string `json:"author"`
+}
+
+// DeleteUserHandler handle the delete of users
+func DeleteUserHandler(s server.Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// getting mux vars
+		vars := mux.Vars(r)
+		// getting id from mux vars
+		id := vars["id"]
+		// getting token
+		token, err := getToken(s, r, "Authorization")
+		unathorizedError(w, err)
+		// validating token
+		validateToken(w, token, func(claims *models.AppClaims) {
+			userRequest := models.User{
+				Id: id,
+			}
+			// deleting user
+			err := repository.DeleteUsers(r.Context(), &userRequest)
+			internalErr(w, err)
+			// encoding response
+			encode(w, &DeleteUserResponse{Success: true, Message: "User deleted successfully", Author: claims.AuthId})
+		})
+	}
+}
+
+type DeleteInfoUserResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	Author  string `json:"author"`
+}
+
+// DeleteInfoUserHandler handle the delete of info_users
+func DeleteInfoUserHandler(s server.Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// getting mux vars
+		vars := mux.Vars(r)
+		// getting id from mux vars
+		id := vars["id"]
+		// getting token
+		token, err := getToken(s, r, "Authorization")
+		unathorizedError(w, err)
+		// validating token
+		validateToken(w, token, func(claims *models.AppClaims) {
+			infoUserRequest := models.InfoUser{
+				Id: id,
+			}
+			// deleting info_user
+			err := repository.DeleteInfoUsers(r.Context(), &infoUserRequest)
+			internalErr(w, err)
+			// encoding response
+			encode(w, &DeleteInfoUserResponse{Success: true, Message: "InfoUser deleted successfully", Author: claims.AuthId})
+		})
+	}
+}
+
+/* ----- Lists ----- */
+
+// ListUsersHandler handle the sellect all of users
+func ListUsersHandler(s server.Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// getting token
+		token, err := getToken(s, r, "Authorization")
+		unathorizedError(w, err)
+		// validating token
+		validateToken(w, token, func(claims *models.AppClaims) {
+			// list users
+			users, err := repository.ListUsers(r.Context())
+			internalErr(w, err)
+			// encoding response
+			encode(w, &users)
+		})
+	}
+}
+
+// ListInfoUsersHandler handle the sellect all of info_users
+func ListInfoUsersHandler(s server.Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// getting token
+		token, err := getToken(s, r, "Authorization")
+		unathorizedError(w, err)
+		// validating token
+		validateToken(w, token, func(claims *models.AppClaims) {
+			// list info_users
+			infoUsers, err := repository.ListInfoUsers(r.Context())
+			internalErr(w, err)
+			// encoding response
+			encode(w, &infoUsers)
+		})
 	}
 }

@@ -7,6 +7,126 @@ import (
 	"tuwsp/models"
 )
 
+// Inserting key value
+func (mssql *SQLServer) InsertIntoKeyValues(ctx context.Context, key_value *models.KeyValue) error {
+	// preparing statement
+	query := `INSERT INTO info.key_values (id, error, title, label_name, placeholder_name, label_nickname, placeholder_nickname, label_email, placeholder_email, label_phone, placeholder_phone, label_password, placeholder_password, label_confirm_password, placeholder_confirm_password, input_submit)
+	SELECT @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15, @p16
+	WHERE NOT EXISTS(SELECT 1 FROM info.key_values WHERE id = @p17)`
+	stmt := MakeStatement(mssql, ctx, query)
+	defer CloseStatement(stmt)
+	// insert
+	_, err := stmt.
+		Exec(key_value.Id,
+			key_value.Error,
+			key_value.Title,
+			key_value.LabelName,
+			key_value.PlaceholderName,
+			key_value.LabelNickname,
+			key_value.PlaceholderNickname,
+			key_value.LabelEmail,
+			key_value.PlaceholderEmail,
+			key_value.LabelPhone,
+			key_value.PlaceholderPhone,
+			key_value.LabelPassword,
+			key_value.PlaceholderPassword,
+			key_value.LabelConfirmPassword,
+			key_value.PlaceholderConfirmPassword,
+			key_value.InputSubmit, key_value.Id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Inserting login
+func (mssql *SQLServer) InsertIntoLogins(ctx context.Context, login *models.Login) error {
+	// preparing statement
+	query := `INSERT INTO info.logins (id, email, created_at, password, log_out, auth_id, form_id)
+	SELECT @p1, @p2, @p3, @p4, @p5, @p6, @p7
+	WHERE NOT EXISTS(SELECT 1 FROM info.logins WHERE id = @p8)`
+	stmt := MakeStatement(mssql, ctx, query)
+	defer CloseStatement(stmt)
+	// insert
+	_, err := stmt.
+		Exec(login.Id,
+			login.Email,
+			login.CreatedAt,
+			login.Password,
+			login.LogOut,
+			login.AuthId,
+			login.FormId, login.Id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Inserting dashboard
+func (mssql *SQLServer) InsertIntoDashboards(ctx context.Context, dashboard *models.Dashboard) error {
+	// preparing statement
+	query := `INSERT INTO info.dashboards (id, title, menu, app, owner)
+	SELECT @p1, @p2, @p3, @p4, @p5
+	WHERE NOT EXISTS(SELECT 1 FROM info.dashboards WHERE id = @p6)`
+	stmt := MakeStatement(mssql, ctx, query)
+	defer CloseStatement(stmt)
+	// insert
+	_, err := stmt.
+		Exec(dashboard.Id,
+			dashboard.Title,
+			dashboard.Menu,
+			dashboard.App,
+			dashboard.Owner, dashboard.Id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Inserting form
+func (mssql *SQLServer) InsertIntoForms(ctx context.Context, form *models.Form) error {
+	// preparing statement
+	query := `INSERT INTO info.forms (id, title, app, key_value)
+	SELECT @p1, @p2, @p3, @p4
+	WHERE NOT EXISTS(SELECT 1 FROM info.forms WHERE id = @p5)`
+	stmt := MakeStatement(mssql, ctx, query)
+	defer CloseStatement(stmt)
+	// insert
+	_, err := stmt.
+		Exec(form.Id,
+			form.Title,
+			form.App,
+			form.Key_Value, form.Id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Inserting signup
+func (mssql *SQLServer) InsertIntoSignups(ctx context.Context, signup *models.Signup) error {
+	// preparing statement
+	query := `INSERT INTO info.signups (id, name, nick_name, email, phone, password, confirm_password, form_id)
+	SELECT @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8
+	WHERE NOT EXISTS(SELECT 1 FROM info.signups WHERE id = @p9)`
+	stmt := MakeStatement(mssql, ctx, query)
+	defer CloseStatement(stmt)
+	// insert
+	_, err := stmt.
+		Exec(signup.Id,
+			signup.Name,
+			signup.NickName,
+			signup.Email,
+			signup.Phone,
+			signup.Password,
+			signup.ConfirmPassword,
+			signup.FormId, signup.Id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Inserting userAuth
 func (mssql *SQLServer) InsertIntoAuths(ctx context.Context, auth *models.Auth) error {
 	// preparing statement
@@ -19,7 +139,7 @@ func (mssql *SQLServer) InsertIntoAuths(ctx context.Context, auth *models.Auth) 
 	_, err := stmt.
 		Exec(auth.Id,
 			auth.Email,
-			auth.CratedAt,
+			auth.CreatedAt,
 			auth.Password, auth.Id)
 	if err != nil {
 		return err
