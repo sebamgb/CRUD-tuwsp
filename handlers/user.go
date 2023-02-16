@@ -19,7 +19,7 @@ type ValidateResponse struct {
 // ValidateHandler Compare request with db data
 func ValidateHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var data = SignupLoginRequest{}
+		var data = models.Login{}
 		// decoding request into body
 		decode(r, w, &data)
 		// Valida los datos contra la base de datos

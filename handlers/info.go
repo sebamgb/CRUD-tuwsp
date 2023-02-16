@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"bytes"
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -125,13 +127,6 @@ func InsertSignupHandler(s server.Server) http.HandlerFunc {
 
 const HASHCOST = 13
 
-type SignupLoginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	FormId   string `json:"formId"`
-	Role     string `json:"role"`
-}
-
 type SignupResponse struct {
 	Id    string `json:"id"`
 	Email string `json:"email"`
@@ -140,7 +135,7 @@ type SignupResponse struct {
 // SignupHandler handle regists an user in db
 func SignupHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var request = SignupLoginRequest{}
+		var request = models.Signup{}
 		// decoding request into body
 		decode(r, w, &request)
 		// hasshing password request
@@ -149,13 +144,20 @@ func SignupHandler(s server.Server) http.HandlerFunc {
 		// random id
 		id, err := ksuid.NewRandom()
 		internalErr(w, err)
-		// getting signup by form id
-		signup, err := repository.GetSignupByFormId(r.Context(), request.FormId)
+		// request post to create a signup and get id
+		req, err := json.Marshal(request)
+		internalErr(w, err)
+		resp, err := http.Post("localhost:3000/signups", "aplication/json", bytes.NewReader(req))
+		internalErr(w, err)
+		// closing body response
+		defer resp.Body.Close()
+		// translate body response to InsertSignupResponse
+		var signupResponse = InsertSignupResponse{}
+		err = json.NewDecoder(resp.Body).Decode(&signupResponse)
 		internalErr(w, err)
 		// making user to db
 		var user = models.Auth{
-			Role:      request.Role,
-			SignupId:  signup.Id,
+			SignupId:  signupResponse.Id,
 			Email:     request.Email,
 			CreatedAt: civil.DateTimeOf(time.Now()),
 			Password:  string(hashedPassword),

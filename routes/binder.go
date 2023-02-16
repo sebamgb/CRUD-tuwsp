@@ -45,7 +45,7 @@ func BindRoute(s server.Server, r *mux.Router) {
 	private.
 		Handle("/logins", handlers.InsertLoginHandler(s)).
 		Methods(http.MethodPost)
-	private.
+	public.
 		Handle("/signups", handlers.InsertSignupHandler(s)).
 		Methods(http.MethodPost)
 	private.
