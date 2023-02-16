@@ -8,8 +8,8 @@ import (
 
 type Repository interface {
 	// Gets
-	GetKeyValueById(ctx context.Context, id string) (*models.KeyValue, error)
-	GetFormByTitle(ctx context.Context, title string) (*models.Form, error)
+	GetKeyValueLabelsById(ctx context.Context, id string) (*models.KeyValue, error)
+	GetKeyValuePlaceholdersByLabelId(ctx context.Context, label_id string) (*models.KeyValue, error)
 	GetFormById(ctx context.Context, id string) (*models.Form, error)
 	GetLoginByAuthId(ctx context.Context, auth_id string) (*models.Login, error)
 	GetSignupById(ctx context.Context, id string) (*models.Signup, error)
@@ -43,6 +43,8 @@ type Repository interface {
 	InsertIntoSignups(ctx context.Context, signup *models.Signup) error
 	InsertIntoLogins(ctx context.Context, login *models.Login) error
 	InsertIntoForms(ctx context.Context, form *models.Form) error
+	InsertIntoKeyValueLabels(ctx context.Context, keyvalue *models.KeyValue) error
+	InsertIntoKeyValuePlaceholders(ctx context.Context, keyvalue *models.KeyValue) error
 	InsertIntoDashboards(ctx context.Context, dashboard *models.Dashboard) error
 	InsertIntoAuths(ctx context.Context, auth *models.Auth) error
 	InsertIntoProtocols(ctx context.Context, protocol *models.Protocol) error
@@ -67,7 +69,8 @@ type Repository interface {
 	DeleteInfoUsers(ctx context.Context, id string) error
 	// Update
 	UpdateSignups(ctx context.Context, signup *models.Signup) error
-	UpdateLogins(ctx context.Context, login *models.Login) error
+	UpdateLoginsInLogIn(ctx context.Context, login *models.Login) error
+	UpdateLoginsInLogOut(ctx context.Context, login *models.Login) error
 	UpdateForms(ctx context.Context, form *models.Form) error
 	UpdateDashboards(ctx context.Context, dashboard *models.Dashboard) error
 	UpdateAuths(ctx context.Context, auth *models.Auth) error
@@ -91,14 +94,14 @@ func SetRepository(repository Repository) {
 
 /* Gets */
 
-// GetKeyValueById do which the implementation
-func GetKeyValueById(ctx context.Context, id string) (*models.KeyValue, error) {
-	return implementation.GetKeyValueById(ctx, id)
+// GetKeyValueLabelsById do which the implementation
+func GetKeyValueLabelsById(ctx context.Context, id string) (*models.KeyValue, error) {
+	return implementation.GetKeyValueLabelsById(ctx, id)
 }
 
-// GetFormByTitle do which the implementation
-func GetFormByTitle(ctx context.Context, title string) (*models.Form, error) {
-	return implementation.GetFormByTitle(ctx, title)
+// GetKeyValuePlaceholdersByLabelId do which the implementation
+func GetKeyValuePlaceholdersByLabelId(ctx context.Context, label_id string) (*models.KeyValue, error) {
+	return implementation.GetKeyValuePlaceholdersByLabelId(ctx, label_id)
 }
 
 // GetFormById do wich the implementation
@@ -260,6 +263,16 @@ func InsertIntoForms(ctx context.Context, form *models.Form) error {
 	return implementation.InsertIntoForms(ctx, form)
 }
 
+// InsertIntoKeyValueLabels do which the implementation
+func InsertIntoKeyValueLabels(ctx context.Context, keyvalue *models.KeyValue) error {
+	return implementation.InsertIntoKeyValueLabels(ctx, keyvalue)
+}
+
+// InsertIntoKeyValuePlaceholders do which the implementation
+func InsertIntoKeyValuePlaceholders(ctx context.Context, keyvalue *models.KeyValue) error {
+	return implementation.InsertIntoKeyValuePlaceholders(ctx, keyvalue)
+}
+
 // InsertIntoDashboards do which the implementation
 func InsertIntoDashboards(ctx context.Context, dashboard *models.Dashboard) error {
 	return implementation.InsertIntoDashboards(ctx, dashboard)
@@ -369,9 +382,14 @@ func DeleteInfoUsers(ctx context.Context, id string) error {
 
 /* Updates */
 
-// UpdateLogins do which the implementation
-func UpdateLogins(ctx context.Context, login *models.Login) error {
-	return implementation.UpdateLogins(ctx, login)
+// UpdateLoginsInLogIn do which the implementation
+func UpdateLoginsInLogIn(ctx context.Context, login *models.Login) error {
+	return implementation.UpdateLoginsInLogIn(ctx, login)
+}
+
+// UpdateLoginsInLogOut do which the implementation
+func UpdateLoginsInLogOut(ctx context.Context, login *models.Login) error {
+	return implementation.UpdateLoginsInLogOut(ctx, login)
 }
 
 // UpdateSignups do which the implementation

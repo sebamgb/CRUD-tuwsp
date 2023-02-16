@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -19,11 +20,18 @@ type ValidateResponse struct {
 // ValidateHandler Compare request with db data
 func ValidateHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var data = SignupLoginRequest{}
+		var data = models.Login{}
 		// decoding request into body
-		decode(r, w, &data)
-		// Valida los datos contra la base de datos
+		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		// Validating form
 		success, message := validateAgainstDB(data.Email, data.Password, r.Context())
+		if !success {
+			encode(w, &ValidateResponse{Success: success, Message: message})
+			return
+		}
 		// encoding response
 		encode(w, &ValidateResponse{Success: success, Message: message})
 	}
@@ -40,10 +48,17 @@ func InsertUserHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userRequest := models.User{}
 		// decoding request into body
-		decode(r, w, &userRequest)
+		if err := json.NewDecoder(r.Body).Decode(&userRequest); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 		// inserting user
 		err := repository.InsertIntoUsers(r.Context(), &userRequest)
-		internalErr(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
 		// encoding response
 		encode(w, &InsertUserResponse{Id: userRequest.Id})
 	}
@@ -58,10 +73,17 @@ func InsertInfoUserHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		infoUserRequest := models.InfoUser{}
 		// decoding request into body
-		decode(r, w, &infoUserRequest)
+		if err := json.NewDecoder(r.Body).Decode(&infoUserRequest); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 		// inserting info_user
 		err := repository.InsertIntoInfoUsers(r.Context(), &infoUserRequest)
-		internalErr(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
 		// encoding response
 		encode(w, &InsertInfoUserResponse{Id: infoUserRequest.Id})
 	}
@@ -77,7 +99,11 @@ func GetUserByNickNameHandler(s server.Server) http.HandlerFunc {
 		// getting user
 		user, err := repository.
 			GetUserByNickName(r.Context(), params.Get("q"))
-		internalErr(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
 		// encoding response
 		encode(w, &user)
 	}
@@ -91,7 +117,11 @@ func GetUserByIdHandler(s server.Server) http.HandlerFunc {
 		// getting user
 		user, err := repository.
 			GetUserById(r.Context(), params.Get("q"))
-		internalErr(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
 		// encoding response
 		encode(w, &user)
 	}
@@ -105,7 +135,11 @@ func GetInfoUserByUserIdHandler(s server.Server) http.HandlerFunc {
 		// getting info_user
 		infouser, err := repository.
 			GetInfoUserByUserId(r.Context(), params.Get("q"))
-		internalErr(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
 		// encoding response
 		encode(w, &infouser)
 	}
@@ -116,11 +150,18 @@ func GetInfoUserByPhoneHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// trying to convert to int by queryparams
 		phone, err := strconv.Atoi(r.URL.Query().Get("q"))
-		internalErr(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 		// getting info_user
 		infouser, err := repository.
 			GetInfoUserByPhone(r.Context(), phone)
-		internalErr(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
 		// encoding response
 		encode(w, &infouser)
 	}
@@ -143,17 +184,27 @@ func UpdateUserHandler(s server.Server) http.HandlerFunc {
 		id := vars["id"]
 		// getting token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validating token
-		validateToken(w, token, func(claims *models.AppClaims) {
+		validateTokenAndRole(w, token, "tuwsper", func(claims *models.AppClaims) {
 			userRequest := models.User{
 				Id: id,
 			}
 			// decoding request into body
-			decode(r, w, &userRequest)
+			if err := json.NewDecoder(r.Body).Decode(&userRequest); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
 			// updating user
 			err := repository.UpdateUsers(r.Context(), &userRequest)
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
 			// encoding response
 			encode(w, &UpdateUserResponse{Success: true, Message: "User updated successfully", Author: claims.AuthId})
 		})
@@ -175,17 +226,27 @@ func UpdateInfoUserHandler(s server.Server) http.HandlerFunc {
 		id := vars["id"]
 		// getting token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validating token
-		validateToken(w, token, func(claims *models.AppClaims) {
+		validateTokenAndRole(w, token, "tuwsper", func(claims *models.AppClaims) {
 			infoUserRequest := models.InfoUser{
 				Id: id,
 			}
 			// decoding request into body
-			decode(r, w, &infoUserRequest)
+			if err := json.NewDecoder(r.Body).Decode(&infoUserRequest); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
 			// updating info_user
 			err := repository.UpdateInfoUsers(r.Context(), &infoUserRequest)
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
 			// encoding response
 			encode(w, &UpdateInfoUserResponse{Success: true, Message: "InfoUser updated successfully", Author: claims.AuthId})
 		})
@@ -209,12 +270,19 @@ func DeleteUserHandler(s server.Server) http.HandlerFunc {
 		id := vars["id"]
 		// getting token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validating token
-		validateToken(w, token, func(claims *models.AppClaims) {
+		validateTokenAndRole(w, token, "tuwsper", func(claims *models.AppClaims) {
 			// deleting user
 			err := repository.DeleteUsers(r.Context(), id)
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
 			// encoding response
 			encode(w, &DeleteUserResponse{Success: true, Message: "User deleted successfully", Author: claims.AuthId})
 		})
@@ -236,12 +304,19 @@ func DeleteInfoUserHandler(s server.Server) http.HandlerFunc {
 		id := vars["id"]
 		// getting token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validating token
-		validateToken(w, token, func(claims *models.AppClaims) {
+		validateTokenAndRole(w, token, "tuwsper", func(claims *models.AppClaims) {
 			// deleting info_user
 			err := repository.DeleteInfoUsers(r.Context(), id)
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
 			// encoding response
 			encode(w, &DeleteInfoUserResponse{Success: true, Message: "InfoUser deleted successfully", Author: claims.AuthId})
 		})
@@ -255,12 +330,19 @@ func ListUsersHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// getting token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validating token
-		validateToken(w, token, func(claims *models.AppClaims) {
+		validateTokenAndRole(w, token, "tuwsper", func(claims *models.AppClaims) {
 			// list users
 			users, err := repository.ListUsers(r.Context())
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusNotFound)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
 			// encoding response
 			encode(w, &users)
 		})
@@ -272,12 +354,19 @@ func ListInfoUsersHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// getting token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validating token
-		validateToken(w, token, func(claims *models.AppClaims) {
+		validateTokenAndRole(w, token, "tuwsper", func(claims *models.AppClaims) {
 			// list info_users
 			infoUsers, err := repository.ListInfoUsers(r.Context())
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusNotFound)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
 			// encoding response
 			encode(w, &infoUsers)
 		})
