@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -31,14 +31,20 @@ func InsertLoginHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 		// validate token
-		validateToken(w, token, func(claims *models.AppClaims) {
+		validateTokenAndRole(w, token, "tuwsper", func(claims *models.AppClaims) {
 			loginRequest := models.Login{
 				AuthId: claims.AuthId,
 			}
 			// decode request into body
-			decode(r, w, &loginRequest)
+			if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
 			// login created at now
 			loginRequest.CreatedAt = civil.DateTimeOf(time.Now())
 			// new random ksuid
@@ -50,10 +56,77 @@ func InsertLoginHandler(s server.Server) http.HandlerFunc {
 			loginRequest.Id = id.String()
 			// insert login
 			err = repository.InsertIntoLogins(r.Context(), &loginRequest)
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.WriteHeader(http.StatusCreated)
 			// encoding response
 			encode(w, &InsertLoginResponse{Id: loginRequest.Id, Success: true, Message: "Login created successfully", Author: claims.AuthId})
 		})
+	}
+}
+
+type KeyValueResponse struct {
+	Id      string `json:"id"`
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	Author  string `json:"author"`
+}
+
+// InsertKeyValueLabelshandler handle an insert for key_value_labels in db
+func InsertKeyValueLabelsHandler(s server.Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		keyValueRequest := models.KeyValue{}
+		// decode request into body
+		if err := json.NewDecoder(r.Body).Decode(&keyValueRequest); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		// new random ksuid
+		id, err := ksuid.NewRandom()
+		if err != nil {
+			panic(err)
+		}
+		// key_value id random
+		keyValueRequest.Id = id.String()
+		// insert key_value
+		err = repository.InsertIntoKeyValueLabels(r.Context(), &keyValueRequest)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
+		// encoding response
+		encode(w, &KeyValueResponse{Id: keyValueRequest.Id, Success: true, Message: "KeyValue created successfully", Author: keyValueRequest.Author})
+	}
+}
+
+// InsertKeyValueplaceholdershandler handle an insert for key_value_placeholders in db
+func InsertKeyValuePlaceholdersHandler(s server.Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		keyValueRequest := models.KeyValue{}
+		// decode request into body
+		if err := json.NewDecoder(r.Body).Decode(&keyValueRequest); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		// new random ksuid
+		id, err := ksuid.NewRandom()
+		if err != nil {
+			panic(err)
+		}
+		// key_value id random
+		keyValueRequest.Id = id.String()
+		// insert key_value
+		err = repository.InsertIntoKeyValuePlaceholders(r.Context(), &keyValueRequest)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
+		// encoding response
+		encode(w, &KeyValueResponse{Id: keyValueRequest.Id, Success: true, Message: "KeyValue created successfully", Author: keyValueRequest.Author})
 	}
 }
 
@@ -67,27 +140,28 @@ type InsertFormResponse struct {
 // InsertFormHandler handle an insert for forms in db
 func InsertFormHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// get token
-		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
-		// validate token
-		validateTokenAndRole(w, token, "admin", func(claims *models.AppClaims) {
-			formRequest := models.Form{}
-			// decode request into body
-			decode(r, w, &formRequest)
-			// new random ksuid
-			id, err := ksuid.NewRandom()
-			if err != nil {
-				panic(err)
-			}
-			// form id random
-			formRequest.Id = id.String()
-			// insert form
-			err = repository.InsertIntoForms(r.Context(), &formRequest)
-			internalErr(w, err)
-			// encoding response
-			encode(w, &InsertFormResponse{Id: formRequest.Id, Sucess: true, Message: "Form created successfully", Author: claims.AuthId})
-		})
+		formRequest := models.Form{}
+		// decode request into body
+		if err := json.NewDecoder(r.Body).Decode(&formRequest); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		// new random ksuid
+		id, err := ksuid.NewRandom()
+		if err != nil {
+			panic(err)
+		}
+		// form id random
+		formRequest.Id = id.String()
+		// insert form
+		err = repository.InsertIntoForms(r.Context(), &formRequest)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
+		// encoding response
+		encode(w, &InsertFormResponse{Id: formRequest.Id, Sucess: true, Message: "Form created successfully", Author: formRequest.Author})
 	}
 }
 
@@ -103,12 +177,18 @@ func InsertSignupHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validate token
 		validateTokenAndRole(w, token, "admin", func(claims *models.AppClaims) {
 			signupRequest := models.Signup{}
 			// decode request into body
-			decode(r, w, &signupRequest)
+			if err := json.NewDecoder(r.Body).Decode(&signupRequest); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
 			// new random ksuid
 			id, err := ksuid.NewRandom()
 			if err != nil {
@@ -118,7 +198,11 @@ func InsertSignupHandler(s server.Server) http.HandlerFunc {
 			signupRequest.Id = id.String()
 			// insert signup
 			err = repository.InsertIntoSignups(r.Context(), &signupRequest)
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.WriteHeader(http.StatusCreated)
 			// encoding response
 			encode(w, &InsertSignupResponse{Id: signupRequest.Id, Success: true, Message: "Signup created successfully", Author: claims.AuthId})
 		})
@@ -137,24 +221,22 @@ func SignupHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var request = models.Signup{}
 		// decoding request into body
-		decode(r, w, &request)
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 		// hasshing password request
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(request.Password), HASHCOST)
-		internalErr(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		// random id
 		id, err := ksuid.NewRandom()
-		internalErr(w, err)
-		// request post to create a signup and get id
-		req, err := json.Marshal(request)
-		internalErr(w, err)
-		resp, err := http.Post("localhost:3000/signups", "aplication/json", bytes.NewReader(req))
-		internalErr(w, err)
-		// closing body response
-		defer resp.Body.Close()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		// translate body response to InsertSignupResponse
 		var signupResponse = InsertSignupResponse{}
-		err = json.NewDecoder(resp.Body).Decode(&signupResponse)
-		internalErr(w, err)
 		// making user to db
 		var user = models.Auth{
 			SignupId:  signupResponse.Id,
@@ -165,7 +247,11 @@ func SignupHandler(s server.Server) http.HandlerFunc {
 		}
 		// insert of user
 		err = repository.InsertIntoAuths(r.Context(), &user)
-		internalErr(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
 		// encoding response
 		encode(w, &SignupResponse{Id: user.Id, Email: user.Email})
 	}
@@ -183,24 +269,35 @@ func InsertDashboardHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validate token
-		validateToken(w, token, func(claims *models.AppClaims) {
+		validateTokenAndRole(w, token, "tuwsper", func(claims *models.AppClaims) {
 			dashboardRequest := models.Dashboard{
 				Owner: claims.AuthId,
 			}
 			// decode request into body
-			decode(r, w, &dashboardRequest)
+			if err := json.NewDecoder(r.Body).Decode(&dashboardRequest); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
 			// new random ksuid
 			id, err := ksuid.NewRandom()
 			if err != nil {
-				panic(err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
 			}
 			// dashboard id random
 			dashboardRequest.Id = id.String()
 			// insert dashboard
 			err = repository.InsertIntoDashboards(r.Context(), &dashboardRequest)
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.WriteHeader(http.StatusCreated)
 			// encoding response
 			encode(w, &InsertDashboardResponse{Id: dashboardRequest.Id, Success: true, Message: "Dashboard created successfully", Author: claims.AuthId})
 		})
@@ -219,18 +316,30 @@ func InsertAuthHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validate token
 		validateTokenAndRole(w, token, "admin", func(claims *models.AppClaims) {
 			authRequest := models.Auth{}
 			// decode request into body
-			decode(r, w, &authRequest)
+			if err := json.NewDecoder(r.Body).Decode(&authRequest); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
 			// new random ksuid
 			id, err := ksuid.NewRandom()
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 			// hashing password
 			hashedPassword, err := bcrypt.GenerateFromPassword([]byte(authRequest.Password), HASHCOST)
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 			// auth password hashed
 			authRequest.Password = string(hashedPassword)
 			// auth id random
@@ -241,7 +350,11 @@ func InsertAuthHandler(s server.Server) http.HandlerFunc {
 			authRequest.SignupId = claims.AuthId
 			// insert auth
 			err = repository.InsertIntoAuths(r.Context(), &authRequest)
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.WriteHeader(http.StatusCreated)
 			// encoding response
 			encode(w, &InsertAuthResponse{Id: authRequest.Id, Success: true, Message: "Auth created successfully", Author: claims.AuthId})
 		})
@@ -250,31 +363,65 @@ func InsertAuthHandler(s server.Server) http.HandlerFunc {
 
 /* ----- Gets -----*/
 
-// GetKeyValueByIdHandler handle a select for keyvalues in db
-func GetKeyValueByIdHandler(s server.Server) http.HandlerFunc {
+type ValidateRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type ValidateResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+}
+
+// ValidateHandler Compare request with db data
+func ValidateHandler(s server.Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var data = ValidateRequest{}
+		// decoding request into body
+		if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		// Validating form
+		success, message := validateAgainstDB(data.Email, data.Password, r.Context())
+		// encoding response
+		encode(w, &ValidateResponse{Success: success, Message: message})
+	}
+}
+
+// GetKeyValueLabelsByIdHandler handle a select for key_value_labels in db
+func GetKeyValueLabelsByIdHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// getting queryparams
 		params := r.URL.Query()
 		// getting keyvalue by id
 		keyvalue, err := repository.
-			GetKeyValueById(r.Context(), params.Get("q"))
-		internalErr(w, err)
+			GetKeyValueLabelsById(r.Context(), params.Get("q"))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
 		// encoding response
 		encode(w, &keyvalue)
 	}
 }
 
-// GetFormByTitleHandler handle a select for forms in db
-func GetFormByTitleHandler(s server.Server) http.HandlerFunc {
+// GetKeyValuePlaceholdersByLabelIdHandler handle a select for key_value_placeholders in db
+func GetKeyValuePlaceholdersByLabelIdHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// getting queryparams
 		params := r.URL.Query()
-		// getting form by title
-		form, err := repository.
-			GetFormByTitle(r.Context(), params.Get("q"))
-		internalErr(w, err)
+		// getting keyvalue by label id
+		keyvalue, err := repository.
+			GetKeyValuePlaceholdersByLabelId(r.Context(), params.Get("q"))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
 		// encoding response
-		encode(w, &form)
+		encode(w, &keyvalue)
 	}
 }
 
@@ -283,13 +430,20 @@ func GetLoginByAuthIdHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validate token
-		validateToken(w, token, func(claims *models.AppClaims) {
+		validateTokenAndRole(w, token, "tuwsper", func(claims *models.AppClaims) {
 			// getting login by auth id
 			login, err := repository.
 				GetLoginByAuthId(r.Context(), claims.AuthId)
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusNotFound)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
 			// encoding response
 			encode(w, &login)
 		})
@@ -311,10 +465,16 @@ func LoginHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var request = LoginRequest{}
 		// decode request into body
-		decode(r, w, &request)
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 		// get auth
 		user, err := repository.GetAuthByEmail(r.Context(), request.Email)
-		internalErr(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
 		// unathorized requests
 		if user == nil {
 			http.Error(w, "invalid credentials", http.StatusUnauthorized)
@@ -337,7 +497,11 @@ func LoginHandler(s server.Server) http.HandlerFunc {
 		// confection token with claims previosly do
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
 		tokenString, err := token.SignedString([]byte(s.Config().JWTSecret))
-		internalErr(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
 		// encoding response
 		encode(w, &LoginResponse{Token: tokenString, Success: true})
 	}
@@ -348,13 +512,19 @@ func GetSignupByIdHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validate token
-		validateToken(w, token, func(claims *models.AppClaims) {
+		validateTokenAndRole(w, token, "tuwsper", func(claims *models.AppClaims) {
 			// getting signup by id
 			signup, err := repository.
 				GetSignupById(r.Context(), claims.SignupId)
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusNotFound)
+				return
+			}
 			// encoding response
 			encode(w, &signup)
 		})
@@ -366,13 +536,19 @@ func GetDashboardByAuthIdHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validate token
-		validateToken(w, token, func(claims *models.AppClaims) {
+		validateTokenAndRole(w, token, "tuwsper", func(claims *models.AppClaims) {
 			// getting dashboard by auth id
 			dashboard, err := repository.
 				GetDashboardByAuthId(r.Context(), claims.AuthId)
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusNotFound)
+				return
+			}
 			// encoding response
 			encode(w, &dashboard)
 		})
@@ -384,33 +560,58 @@ func MeHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// getting token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validating token
-		validateToken(w, token, func(claims *models.AppClaims) {
+		validateTokenAndRole(w, token, "tuwsper", func(claims *models.AppClaims) {
 			// getting auth from db
 			auth, err := repository.GetAuthById(r.Context(), claims.AuthId)
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusNotFound)
+				return
+			}
 			// encoding response
 			encode(w, auth)
 		})
 	}
 }
 
-/* -----Updates-----*/
+// GetFormByIdHandler handle a select for forms in db
+func GetFormByIdHandler(s server.Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// getting queryparams
+		params := r.URL.Query()
+		// getting form by id
+		form, err := repository.GetFormById(r.Context(), params.Get("q"))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		// encoding response
+		encode(w, &form)
+	}
+}
 
-type UpdateLoginResponse struct {
+/* ----- Updates ----- */
+
+type UpdateLoginInLogInResponse struct {
 	Success bool   `json:"success"`
 	Message string `json:"message"`
 }
 
-// UpdateLoginHandler handle an update for logins in db
-func UpdateLoginHandler(s server.Server) http.HandlerFunc {
+// UpdateLoginInLogInHandler handle an update for logins in db
+func UpdateLoginInLogInHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validate token
-		validateTokenAndRole(w, token, "admin", func(claims *models.AppClaims) {
+		if claims, ok := token.Claims.(*models.AppClaims); ok && token.Valid {
 			// getting mux vars
 			vars := mux.Vars(r)
 			// getting id from vars
@@ -424,13 +625,70 @@ func UpdateLoginHandler(s server.Server) http.HandlerFunc {
 				Id: id,
 			}
 			// decode request into body
-			decode(r, w, &loginRequest)
+			if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
 			// updating login
-			err = repository.UpdateLogins(r.Context(), &loginRequest)
-			internalErr(w, err)
+			err = repository.UpdateLoginsInLogIn(r.Context(), &loginRequest)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
 			// encoding response
-			encode(w, &UpdateLoginResponse{Success: true, Message: "Login updated successfully"})
-		})
+			encode(w, &UpdateLoginInLogInResponse{Success: true, Message: fmt.Sprintf("%s successfully logged in", claims.AuthId)})
+		} else {
+			http.Error(w, "invalid token", http.StatusUnauthorized)
+		}
+	}
+}
+
+type UpdateLoginInLogOutResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+}
+
+// UpdateLoginInLogOutHandler handle an update for logins in db
+func UpdateLoginInLogOutHandler(s server.Server) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// get token
+		token, err := getToken(s, r, "Authorization")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
+		// validate token
+		if claims, ok := token.Claims.(*models.AppClaims); ok && token.Valid {
+			// getting mux vars
+			vars := mux.Vars(r)
+			// getting id from vars
+			id, ok := vars["id"]
+			if !ok {
+				http.Error(w, "id is required", http.StatusBadRequest)
+				return
+			}
+			// making request
+			loginRequest := models.Login{
+				Id: id,
+			}
+			// decode request into body
+			if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			// updating login
+			err = repository.UpdateLoginsInLogOut(r.Context(), &loginRequest)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
+			// encoding response
+			encode(w, &UpdateLoginInLogOutResponse{Success: true, Message: fmt.Sprintf("%s successfully logged out", claims.AuthId)})
+		} else {
+			http.Error(w, "invalid token", http.StatusUnauthorized)
+		}
 	}
 }
 
@@ -444,7 +702,10 @@ func UpdateFormHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validate token
 		validateTokenAndRole(w, token, "admin", func(claims *models.AppClaims) {
 			// getting mux vars
@@ -460,10 +721,17 @@ func UpdateFormHandler(s server.Server) http.HandlerFunc {
 				Id: id,
 			}
 			// decode request into body
-			decode(r, w, &formRequest)
+			if err := json.NewDecoder(r.Body).Decode(&formRequest); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
 			// updating form
 			err := repository.UpdateForms(r.Context(), &formRequest)
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
 			// encoding response
 			encode(w, &UpdateFormResponse{Success: true, Message: "Form updated successfully"})
 		})
@@ -480,9 +748,12 @@ func UpdateSignupHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validate token
-		validateToken(w, token, func(claims *models.AppClaims) {
+		validateTokenAndRole(w, token, "tuwsper", func(claims *models.AppClaims) {
 			// getting mux vars
 			vars := mux.Vars(r)
 			// getting id from vars
@@ -496,10 +767,17 @@ func UpdateSignupHandler(s server.Server) http.HandlerFunc {
 				Id: id,
 			}
 			// decode request into body
-			decode(r, w, &signupRequest)
+			if err := json.NewDecoder(r.Body).Decode(&signupRequest); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
 			// updating signup
 			err := repository.UpdateSignups(r.Context(), &signupRequest)
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
 			// encoding response
 			encode(w, &UpdateSignupResponse{Success: true, Message: "Signup updated successfully"})
 		})
@@ -516,9 +794,12 @@ func UpdateDashboardHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validate token
-		validateToken(w, token, func(claims *models.AppClaims) {
+		validateTokenAndRole(w, token, "tuwsper", func(claims *models.AppClaims) {
 			// getting mux vars
 			vars := mux.Vars(r)
 			// getting id from vars
@@ -532,10 +813,17 @@ func UpdateDashboardHandler(s server.Server) http.HandlerFunc {
 				Id: id,
 			}
 			// decode request into body
-			decode(r, w, &dashboardRequest)
+			if err := json.NewDecoder(r.Body).Decode(&dashboardRequest); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
 			// updating dashboard
 			err := repository.UpdateDashboards(r.Context(), &dashboardRequest)
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
 			// encoding response
 			encode(w, &UpdateDashboardResponse{Success: true, Message: "Dashboard updated successfully"})
 		})
@@ -552,9 +840,12 @@ func UpdateAuthHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validate token
-		validateToken(w, token, func(claims *models.AppClaims) {
+		validateTokenAndRole(w, token, "tuwsper", func(claims *models.AppClaims) {
 			// getting mux vars
 			vars := mux.Vars(r)
 			// getting id from vars
@@ -568,10 +859,17 @@ func UpdateAuthHandler(s server.Server) http.HandlerFunc {
 				Id: id,
 			}
 			// decode request into body
-			decode(r, w, &authRequest)
+			if err := json.NewDecoder(r.Body).Decode(&authRequest); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
 			// updating auth
 			err := repository.UpdateAuths(r.Context(), &authRequest)
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
 			// encoding response
 			encode(w, &UpdateAuthResponse{Success: true, Message: "Auth updated successfully"})
 		})
@@ -591,7 +889,10 @@ func DeleteLoginHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validate token
 		validateTokenAndRole(w, token, "admin", func(claims *models.AppClaims) {
 			// getting mux vars
@@ -604,7 +905,11 @@ func DeleteLoginHandler(s server.Server) http.HandlerFunc {
 			}
 			// deleting login
 			err := repository.DeleteLogins(r.Context(), id)
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
 			// encoding response
 			encode(w, &DeleteLoginResponse{Success: true, Message: "Login deleted successfully", Author: claims.AuthId})
 		})
@@ -622,7 +927,10 @@ func DeleteFormHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validate token
 		validateTokenAndRole(w, token, "admin", func(claims *models.AppClaims) {
 			// getting mux vars
@@ -635,7 +943,11 @@ func DeleteFormHandler(s server.Server) http.HandlerFunc {
 			}
 			// deleting form
 			err := repository.DeleteForms(r.Context(), id)
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
 			// encoding response
 			encode(w, &DeleteFormResponse{Success: true, Message: "Form deleted successfully", Author: claims.AuthId})
 		})
@@ -653,7 +965,10 @@ func DeleteSignupHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validate token
 		validateTokenAndRole(w, token, "admin", func(claims *models.AppClaims) {
 			// getting mux vars
@@ -666,7 +981,11 @@ func DeleteSignupHandler(s server.Server) http.HandlerFunc {
 			}
 			// deleting signup
 			err := repository.DeleteSignups(r.Context(), id)
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
 			// encoding response
 			encode(w, &DeleteSignupResponse{Success: true, Message: "Signup deleted successfully", Author: claims.AuthId})
 		})
@@ -684,9 +1003,12 @@ func DeleteDashboardHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validate token
-		validateToken(w, token, func(claims *models.AppClaims) {
+		validateTokenAndRole(w, token, "tuwsper", func(claims *models.AppClaims) {
 			// getting mux vars
 			vars := mux.Vars(r)
 			// getting id from vars
@@ -697,7 +1019,11 @@ func DeleteDashboardHandler(s server.Server) http.HandlerFunc {
 			}
 			// deleting dashboard
 			err := repository.DeleteDashboards(r.Context(), id)
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
 			// encoding response
 			encode(w, &DeleteDashboardResponse{Success: true, Message: "Dashboard deleted successfully", Author: claims.AuthId})
 		})
@@ -715,9 +1041,12 @@ func DeleteAuthHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validate token
-		validateToken(w, token, func(claims *models.AppClaims) {
+		validateTokenAndRole(w, token, "tuwsper", func(claims *models.AppClaims) {
 			// getting mux vars
 			vars := mux.Vars(r)
 			// getting id from vars
@@ -728,7 +1057,11 @@ func DeleteAuthHandler(s server.Server) http.HandlerFunc {
 			}
 			// deleting auth
 			err := repository.DeleteAuths(r.Context(), id)
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
 			// encoding response
 			encode(w, &DeleteAuthResponse{Success: true, Message: "Auth deleted successfully", Author: claims.AuthId})
 		})
@@ -742,12 +1075,19 @@ func ListFormsHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validate token
 		validateTokenAndRole(w, token, "admin", func(claims *models.AppClaims) {
 			// listing forms
 			forms, err := repository.ListForms(r.Context())
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusNotFound)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
 			// encoding response
 			encode(w, &forms)
 		})
@@ -759,12 +1099,19 @@ func ListLoginsHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validate token
 		validateTokenAndRole(w, token, "admin", func(claims *models.AppClaims) {
 			// listing logins
 			logins, err := repository.ListLogins(r.Context())
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusNotFound)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
 			// encoding response
 			encode(w, &logins)
 		})
@@ -776,12 +1123,19 @@ func ListSignupsHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validate token
 		validateTokenAndRole(w, token, "admin", func(claims *models.AppClaims) {
 			// listing signups
 			signups, err := repository.ListSignups(r.Context())
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusNotFound)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
 			// encoding response
 			encode(w, &signups)
 		})
@@ -793,12 +1147,19 @@ func ListDashboardsHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validate token
 		validateTokenAndRole(w, token, "admin", func(claims *models.AppClaims) {
 			// listing dashboards
 			dashboards, err := repository.ListDashboards(r.Context())
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusNotFound)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
 			// encoding response
 			encode(w, &dashboards)
 		})
@@ -810,12 +1171,19 @@ func ListAuthsHandler(s server.Server) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// get token
 		token, err := getToken(s, r, "Authorization")
-		unathorizedError(w, err)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+			return
+		}
 		// validate token
-		validateToken(w, token, func(claims *models.AppClaims) {
+		validateTokenAndRole(w, token, "tuwsper", func(claims *models.AppClaims) {
 			// listing auths
 			auths, err := repository.ListAuths(r.Context())
-			internalErr(w, err)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusNotFound)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
 			// encoding response
 			encode(w, &auths)
 		})
