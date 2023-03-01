@@ -8,11 +8,11 @@ import (
 	"tuwsp/models"
 )
 
-// GetKeyValueById get a key_value from db by its id
-func (mssql *SQLServer) GetKeyValueById(ctx context.Context, id string) (*models.KeyValue, error) {
+// GetKeyValueLabelsById get a key_value_labels from db by its id
+func (mssql *SQLServer) GetKeyValueLabelsById(ctx context.Context, id string) (*models.KeyValue, error) {
 	// preparing statement
-	query := `SELECT id, title, label_email, placeholder_email, label_password, placeholder_password, input_submit
-	FROM info.key_values
+	query := `SELECT id, title, label_name, label_nickname, label_email, label_phone, label_birthday, label_country, label_password, label_confirm_password, input_submit
+	FROM info.key_value_labels
 	WHERE id = @p1`
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
@@ -21,15 +21,47 @@ func (mssql *SQLServer) GetKeyValueById(ctx context.Context, id string) (*models
 	if err := stmt.QueryRow(id).
 		Scan(&key_value.Id,
 			&key_value.Title,
+			&key_value.LabelName,
+			&key_value.LabelNickname,
 			&key_value.LabelEmail,
-			&key_value.PlaceholderEmail,
+			&key_value.LabelPhone,
+			&key_value.LabelBirthday,
+			&key_value.LabelCountry,
 			&key_value.LabelPassword,
-			&key_value.PlaceholderPassword,
+			&key_value.LabelConfirmPassword,
 			&key_value.InputSubmit); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, fmt.Errorf("errbyid:canPurchase %s: unknown user", id)
 		}
 		return nil, fmt.Errorf("canPurchase %s: %v", id, err)
+	}
+	return &key_value, nil
+}
+
+// GetKeyValuePlaceholdersByLabelId get a key_value_placeholders from db by its label id
+func (mssql *SQLServer) GetKeyValuePlaceholdersByLabelId(ctx context.Context, label_id string) (*models.KeyValue, error) {
+	// preparing statement
+	query := `SELECT id, placeholder_name, placeholder_nickname, placeholder_email, placeholder_phone, placeholder_country, placeholder_password, placeholder_confirm_password, label_id
+	FROM info.key_value_placeholders
+	WHERE label_id = @p1`
+	stmt := MakeStatement(mssql, ctx, query)
+	defer CloseStatement(stmt)
+	// Query for a value based on a single row.
+	var key_value = models.KeyValue{}
+	if err := stmt.QueryRow(label_id).
+		Scan(&key_value.Id,
+			&key_value.PlaceholderName,
+			&key_value.PlaceholderNickname,
+			&key_value.PlaceholderEmail,
+			&key_value.PlaceholderPhone,
+			&key_value.PlaceholderCountry,
+			&key_value.PlaceholderPassword,
+			&key_value.PlaceholderConfirmPassword,
+			&key_value.LabelId); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("errbyid:canPurchase %s: unknown user", label_id)
+		}
+		return nil, fmt.Errorf("canPurchase %s: %v", label_id, err)
 	}
 	return &key_value, nil
 }
@@ -56,29 +88,6 @@ func (mssql *SQLServer) GetDashboardByAuthId(ctx context.Context, auth_id string
 		return nil, fmt.Errorf("canPurchase %s: %v", auth_id, err)
 	}
 	return &dashboard, nil
-}
-
-// GetFormByTitle get a form from db by its title
-func (mssql *SQLServer) GetFormByTitle(ctx context.Context, title string) (*models.Form, error) {
-	// preparing statement
-	query := `SELECT id, title, app, key_value
-	FROM info.forms
-	WHERE title = @p1`
-	stmt := MakeStatement(mssql, ctx, query)
-	defer CloseStatement(stmt)
-	// Query for a value based on a single row.
-	var form = models.Form{}
-	if err := stmt.QueryRow(title).
-		Scan(&form.Id,
-			&form.Title,
-			&form.App,
-			&form.Key_Value); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("errbyid:canPurchase %s: unknown user", title)
-		}
-		return nil, fmt.Errorf("canPurchase %s: %v", title, err)
-	}
-	return &form, nil
 }
 
 // GetLoginByAuthId get a login from db by its auth_id
@@ -110,7 +119,7 @@ func (mssql *SQLServer) GetLoginByAuthId(ctx context.Context, auth_id string) (*
 // GetFormById get a form from db by its id
 func (mssql *SQLServer) GetFormById(ctx context.Context, id string) (*models.Form, error) {
 	// preparing statement
-	query := `SELECT id, title, app, key_value
+	query := `SELECT id, app, key_value
 	FROM info.forms
 	WHERE id = @p1`
 	stmt := MakeStatement(mssql, ctx, query)
@@ -119,7 +128,6 @@ func (mssql *SQLServer) GetFormById(ctx context.Context, id string) (*models.For
 	var form = models.Form{}
 	if err := stmt.QueryRow(id).
 		Scan(&form.Id,
-			&form.Title,
 			&form.App,
 			&form.Key_Value); err != nil {
 		if err == sql.ErrNoRows {
@@ -133,7 +141,7 @@ func (mssql *SQLServer) GetFormById(ctx context.Context, id string) (*models.For
 // GetLoginById get a login from db by its id
 func (mssql *SQLServer) GetLoginById(ctx context.Context, id string) (*models.Login, error) {
 	// preparing statement
-	query := `SELECT id, email, password, created_at, log_out, auth_id, form_id
+	query := `SELECT id, title, url, method, email, password, created_at, log_out, auth_id, form_id
 	FROM info.logins
 	WHERE id = @p1`
 	stmt := MakeStatement(mssql, ctx, query)
@@ -142,6 +150,9 @@ func (mssql *SQLServer) GetLoginById(ctx context.Context, id string) (*models.Lo
 	var login = models.Login{}
 	if err := stmt.QueryRow(id).
 		Scan(&login.Id,
+			&login.Title,
+			&login.Url,
+			&login.Method,
 			&login.Email,
 			&login.Password,
 			&login.CreatedAt,
@@ -159,7 +170,7 @@ func (mssql *SQLServer) GetLoginById(ctx context.Context, id string) (*models.Lo
 // GetSignupById get a signup from db by its id
 func (mssql *SQLServer) GetSignupById(ctx context.Context, id string) (*models.Signup, error) {
 	// preparing statement
-	query := `SELECT id, name, nick_name, email, phone, password, confirm_password, form_id
+	query := `SELECT id, title, url, method, name, nick_name, email, phone, password, confirm_password, form_id
 	FROM info.signups
 	WHERE id = @p1`
 	stmt := MakeStatement(mssql, ctx, query)
@@ -168,6 +179,9 @@ func (mssql *SQLServer) GetSignupById(ctx context.Context, id string) (*models.S
 	var signup = models.Signup{}
 	if err := stmt.QueryRow(id).
 		Scan(&signup.Id,
+			&signup.Title,
+			&signup.Url,
+			&signup.Method,
 			&signup.Name,
 			&signup.NickName,
 			&signup.Email,
@@ -480,7 +494,7 @@ func (mssql *SQLServer) GetEndPointByUrlId(ctx context.Context, url_id string) (
 // ListForms get all Forms from db
 func (mssql *SQLServer) ListForms(ctx context.Context) (forms []*models.Form, err error) {
 	// preparing statement
-	query := `SELECT id, title, app, key_value
+	query := `SELECT id, app, key_value
 	FROM info.forms
 	ORDER BY id asc`
 	stmt := MakeStatement(mssql, ctx, query)
@@ -494,7 +508,6 @@ func (mssql *SQLServer) ListForms(ctx context.Context) (forms []*models.Form, er
 		var form models.Form
 		if err = rows.
 			Scan(&form.Id,
-				&form.Title,
 				&form.App,
 				&form.Key_Value); err != nil {
 			return
@@ -508,7 +521,7 @@ func (mssql *SQLServer) ListForms(ctx context.Context) (forms []*models.Form, er
 // ListLogins get all logins from db
 func (mssql *SQLServer) ListLogins(ctx context.Context) (logins []*models.Login, err error) {
 	// preparing statement
-	query := `SELECT id, email, password, created_at, log_out, auth_id, form_id
+	query := `SELECT id, title, url, method, email, password, created_at, log_out, auth_id, form_id
 	FROM info.logins
 	ORDER BY id asc`
 	stmt := MakeStatement(mssql, ctx, query)
@@ -522,6 +535,9 @@ func (mssql *SQLServer) ListLogins(ctx context.Context) (logins []*models.Login,
 		var login models.Login
 		if err = rows.
 			Scan(&login.Id,
+				&login.Title,
+				&login.Url,
+				&login.Method,
 				&login.Email,
 				&login.Password,
 				&login.CreatedAt,
@@ -569,7 +585,7 @@ func (mssql *SQLServer) ListAuths(ctx context.Context) (auths []*models.Auth, er
 // ListSignups get all signups from db
 func (mssql *SQLServer) ListSignups(ctx context.Context) (signups []*models.Signup, err error) {
 	// preparing statement
-	query := `SELECT id, email, name, nick_name, password, phone, confirm_password, form_id
+	query := `SELECT id, title, url, method, email, name, nick_name, password, phone, confirm_password, form_id
 	FROM info.signups
 	ORDER BY id asc`
 	stmt := MakeStatement(mssql, ctx, query)
@@ -583,6 +599,9 @@ func (mssql *SQLServer) ListSignups(ctx context.Context) (signups []*models.Sign
 		var signup models.Signup
 		if err = rows.
 			Scan(&signup.Id,
+				&signup.Title,
+				&signup.Url,
+				&signup.Method,
 				&signup.Email,
 				&signup.Name,
 				&signup.NickName,

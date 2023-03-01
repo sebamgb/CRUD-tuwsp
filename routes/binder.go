@@ -31,15 +31,25 @@ func BindRoute(s server.Server, r *mux.Router) {
 		Methods(http.MethodPost)
 	public.
 		Path("/form").
-		Handler(handlers.GetFormByTitleHandler(s)).
+		Handler(handlers.GetFormByIdHandler(s)).
 		Methods(http.MethodGet)
 	public.
-		Path("/key-value").
-		Handler(handlers.GetKeyValueByIdHandler(s)).
+		Path("/key-value-labels").
+		Handler(handlers.GetKeyValueLabelsByIdHandler(s)).
+		Methods(http.MethodGet)
+	public.
+		Path("/key-value-placeholders").
+		Handler(handlers.GetKeyValuePlaceholdersByLabelIdHandler(s)).
 		Methods(http.MethodGet)
 	// Insert paths
 	// info:
-	private.
+	public.
+		Handle("/key-value-labels", handlers.InsertKeyValueLabelsHandler(s)).
+		Methods(http.MethodPost)
+	public.
+		Handle("/key-value-placeholders", handlers.InsertKeyValuePlaceholdersHandler(s)).
+		Methods(http.MethodPost)
+	public.
 		Handle("/forms", handlers.InsertFormHandler(s)).
 		Methods(http.MethodPost)
 	private.
@@ -126,7 +136,10 @@ func BindRoute(s server.Server, r *mux.Router) {
 		Handle("/forms/{id}", handlers.UpdateFormHandler(s)).
 		Methods(http.MethodPut)
 	private.
-		Handle("/logins/{id}", handlers.UpdateLoginHandler(s)).
+		Handle("/login/{id}", handlers.UpdateLoginInLogInHandler(s)).
+		Methods(http.MethodPut)
+	private.
+		Handle("/logout/{id}", handlers.UpdateLoginInLogOutHandler(s)).
 		Methods(http.MethodPut)
 	private.
 		Handle("/signups/{id}", handlers.UpdateSignupHandler(s)).

@@ -7,32 +7,43 @@ import (
 	"tuwsp/models"
 )
 
-// Inserting key value
-func (mssql *SQLServer) InsertIntoKeyValues(ctx context.Context, key_value *models.KeyValue) error {
+// Inserting key value labels
+func (mssql *SQLServer) InsertIntoKeyValueLabels(ctx context.Context, key_value *models.KeyValue) error {
 	// preparing statement
-	query := `INSERT INTO info.key_values (id, error, title, label_name, placeholder_name, label_nickname, placeholder_nickname, label_email, placeholder_email, label_phone, placeholder_phone, label_password, placeholder_password, label_confirm_password, placeholder_confirm_password, input_submit)
-	SELECT @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15, @p16
-	WHERE NOT EXISTS(SELECT 1 FROM info.key_values WHERE id = @p17)`
+	query := `INSERT INTO info.key_value_labels (id, title, label_name, label_nickname, label_email, label_phone, label_birthday, label_country, label_password, label_confirm_password, input_submit)
+	SELECT @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11
+	WHERE NOT EXISTS(SELECT 1 FROM info.key_value_labels WHERE id = @p12)`
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
 	// insert
 	_, err := stmt.
-		Exec(key_value.Id,
-			key_value.Error,
-			key_value.Title,
-			key_value.LabelName,
-			key_value.PlaceholderName,
-			key_value.LabelNickname,
-			key_value.PlaceholderNickname,
-			key_value.LabelEmail,
-			key_value.PlaceholderEmail,
-			key_value.LabelPhone,
-			key_value.PlaceholderPhone,
-			key_value.LabelPassword,
-			key_value.PlaceholderPassword,
-			key_value.LabelConfirmPassword,
-			key_value.PlaceholderConfirmPassword,
+		Exec(key_value.Id, key_value.Title,
+			key_value.LabelName, key_value.LabelNickname,
+			key_value.LabelEmail, key_value.LabelPhone,
+			key_value.LabelBirthday, key_value.LabelCountry,
+			key_value.LabelPassword, key_value.LabelConfirmPassword,
 			key_value.InputSubmit, key_value.Id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Inserting key value placeholders
+func (mssql *SQLServer) InsertIntoKeyValuePlaceholders(ctx context.Context, key_value *models.KeyValue) error {
+	// preparing statement
+	query := `INSERT INTO info.key_value_placeholders (id, placeholder_name, placeholder_nickname, placeholder_email, placeholder_phone, placeholder_country, placeholder_password, placeholder_confirm_password, label_id)
+	SELECT @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9
+	WHERE NOT EXISTS(SELECT 1 FROM info.key_value_labels WHERE id = @p10)`
+	stmt := MakeStatement(mssql, ctx, query)
+	defer CloseStatement(stmt)
+	// insert
+	_, err := stmt.
+		Exec(key_value.Id, key_value.PlaceholderName,
+			key_value.PlaceholderNickname, key_value.PlaceholderEmail,
+			key_value.PlaceholderPhone, key_value.PlaceholderCountry,
+			key_value.PlaceholderPassword, key_value.PlaceholderConfirmPassword,
+			key_value.LabelId, key_value.Id)
 	if err != nil {
 		return err
 	}
@@ -42,20 +53,18 @@ func (mssql *SQLServer) InsertIntoKeyValues(ctx context.Context, key_value *mode
 // Inserting login
 func (mssql *SQLServer) InsertIntoLogins(ctx context.Context, login *models.Login) error {
 	// preparing statement
-	query := `INSERT INTO info.logins (id, email, created_at, password, log_out, auth_id, form_id)
-	SELECT @p1, @p2, @p3, @p4, @p5, @p6, @p7
-	WHERE NOT EXISTS(SELECT 1 FROM info.logins WHERE id = @p8)`
+	query := `INSERT INTO info.logins (id, title, url, method, email, created_at, password, log_out, auth_id, form_id)
+	SELECT @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10
+	WHERE NOT EXISTS(SELECT 1 FROM info.logins WHERE id = @p11)`
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
 	// insert
 	_, err := stmt.
-		Exec(login.Id,
-			login.Email,
-			login.CreatedAt,
-			login.Password,
-			login.LogOut,
-			login.AuthId,
-			login.FormId, login.Id)
+		Exec(login.Id, login.Title,
+			login.Url, login.Method,
+			login.Email, login.CreatedAt,
+			login.Password, login.LogOut,
+			login.AuthId, login.FormId, login.Id)
 	if err != nil {
 		return err
 	}
@@ -86,15 +95,14 @@ func (mssql *SQLServer) InsertIntoDashboards(ctx context.Context, dashboard *mod
 // Inserting form
 func (mssql *SQLServer) InsertIntoForms(ctx context.Context, form *models.Form) error {
 	// preparing statement
-	query := `INSERT INTO info.forms (id, title, app, key_value)
-	SELECT @p1, @p2, @p3, @p4
-	WHERE NOT EXISTS(SELECT 1 FROM info.forms WHERE id = @p5)`
+	query := `INSERT INTO info.forms (id, app, key_value)
+	SELECT @p1, @p2, @p3
+	WHERE NOT EXISTS(SELECT 1 FROM info.forms WHERE id = @p4)`
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
 	// insert
 	_, err := stmt.
 		Exec(form.Id,
-			form.Title,
 			form.App,
 			form.Key_Value, form.Id)
 	if err != nil {
@@ -106,21 +114,20 @@ func (mssql *SQLServer) InsertIntoForms(ctx context.Context, form *models.Form) 
 // Inserting signup
 func (mssql *SQLServer) InsertIntoSignups(ctx context.Context, signup *models.Signup) error {
 	// preparing statement
-	query := `INSERT INTO info.signups (id, name, nick_name, email, phone, password, confirm_password, form_id)
-	SELECT @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8
-	WHERE NOT EXISTS(SELECT 1 FROM info.signups WHERE id = @p9)`
+	query := `INSERT INTO info.signups (id, title, url, method, name, nick_name, email, phone, password, confirm_password, country, form_id)
+	SELECT @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12
+	WHERE NOT EXISTS(SELECT 1 FROM info.signups WHERE id = @p13)`
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
 	// insert
 	_, err := stmt.
-		Exec(signup.Id,
-			signup.Name,
-			signup.NickName,
-			signup.Email,
-			signup.Phone,
-			signup.Password,
-			signup.ConfirmPassword,
-			signup.FormId, signup.Id)
+		Exec(signup.Id, signup.Title,
+			signup.Url, signup.Method,
+			signup.Name, signup.NickName,
+			signup.Email, signup.Phone,
+			signup.Password, signup.ConfirmPassword,
+			signup.Country, signup.FormId,
+			signup.Id)
 	if err != nil {
 		return err
 	}
@@ -132,7 +139,7 @@ func (mssql *SQLServer) InsertIntoAuths(ctx context.Context, auth *models.Auth) 
 	// preparing statement
 	query := `INSERT INTO info.auths (id, email, created_at, password)
 	SELECT @p1, @p2, @p3, @p4
-	WHERE NOT EXISTS(SELECT 1 FROM info.auths WHERE id = @p5)`
+	WHERE NOT EXISTS(SELECT 1 FROM info.auths WHERE id = @p5 AND email <> "" AND password <> "")`
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
 	// insert

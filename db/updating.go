@@ -8,22 +8,44 @@ import (
 	"tuwsp/models"
 )
 
-// UpdateLogins update the email, created_at, password, log_out, auth_id and form_id given from logins by its id
-func (mssql *SQLServer) UpdateLogins(ctx context.Context, login *models.Login) error {
+// UpdateLoginsInLogIn update the email, password, auth_id given from logins by its id
+func (mssql *SQLServer) UpdateLoginsInLogIn(ctx context.Context, login *models.Login) error {
 	// preparing statement
 	query := `UPDATE info.logins
-	SET email = @p1, created_at = @p2, password = @p3, log_out = @p4, auth_id = @p5, form_id = @p6
-	WHERE id = @p7`
+	SET email = @p1, password = @p2, auth_id = @p3
+	WHERE id = @p4`
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
 	// update
 	result, err := stmt.
 		Exec(login.Email,
-			login.CreatedAt,
 			login.Password,
-			login.LogOut,
 			login.AuthId,
-			login.FormId,
+			login.Id)
+	if err != nil {
+		return err
+	}
+	// rows affected?
+	if rows, err := result.RowsAffected(); err != nil {
+		return fmt.Errorf("error: %s when try to get rows affected",
+			err.Error())
+	} else {
+		log.Printf("Rows Affected: %d", rows)
+	}
+	return nil
+}
+
+// UpdateLoginsInLogOut update the log_out given from logins by its id
+func (mssql *SQLServer) UpdateLoginsInLogOut(ctx context.Context, login *models.Login) error {
+	// preparing statement
+	query := `UPDATE info.logins
+	SET log_out = @p1
+	WHERE id = @p2`
+	stmt := MakeStatement(mssql, ctx, query)
+	defer CloseStatement(stmt)
+	// update
+	result, err := stmt.
+		Exec(login.LogOut,
 			login.Id)
 	if err != nil {
 		return err
@@ -66,18 +88,17 @@ func (mssql *SQLServer) UpdateDashboards(ctx context.Context, dashboard *models.
 	return nil
 }
 
-// UpdateForms update the title, app and key_value given from forms by its id
+// UpdateForms update app and key_value given from forms by its id
 func (mssql *SQLServer) UpdateForms(ctx context.Context, form *models.Form) error {
 	// preparing statement
 	query := `UPDATE info.forms
-	SET title = @p1, app = @p2, key_value = @p3
-	WHERE id = @p4`
+	SET app = @p1, key_value = @p2
+	WHERE id = @p3`
 	stmt := MakeStatement(mssql, ctx, query)
 	defer CloseStatement(stmt)
 	// update
 	result, err := stmt.
-		Exec(form.Title,
-			form.App,
+		Exec(form.App,
 			form.Key_Value,
 			form.Id)
 	if err != nil {
